@@ -1,6 +1,6 @@
 import { Entity } from '@common/entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Schema as schema } from 'mongoose';
 import { Role } from './role.entity';
 
 export type UserDocument = HydratedDocument<User>;
@@ -13,7 +13,10 @@ export class User extends Entity {
   @Prop()
   email: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Role' })
+  @Prop({ required: true })
+  password: string;
+
+  @Prop({ type: schema.Types.ObjectId, ref: 'Role', index: true })
   role?: Role;
 
   constructor(user: User) {
@@ -21,6 +24,7 @@ export class User extends Entity {
     this.name = user.name;
     this.email = user.email;
     this.role = user.role;
+    this.password = user.password;
   }
 }
 

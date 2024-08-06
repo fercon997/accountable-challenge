@@ -1,12 +1,12 @@
 import { Entity } from '@common/entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Schema as schema } from 'mongoose';
 
 export type BookInventoryDocument = HydratedDocument<BookInventory>;
 
-@Schema()
+@Schema({ versionKey: 'version' })
 export class BookInventory extends Entity {
-  @Prop({ type: Types.ObjectId, required: true, unique: true })
+  @Prop({ type: schema.Types.String, required: true, unique: true })
   bookId: string;
 
   @Prop()

@@ -1,6 +1,6 @@
 import { Entity } from '@common/entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Schema as schema } from 'mongoose';
 
 export type ReservationDocument = HydratedDocument<Reservation>;
 
@@ -11,12 +11,12 @@ export enum ReservationStatus {
   returned = 'returned',
 }
 
-@Schema({ autoIndex: true })
+@Schema({ autoIndex: true, versionKey: 'version' })
 export class Reservation extends Entity {
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: schema.Types.ObjectId, required: true })
   bookId: number;
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: schema.Types.ObjectId, required: true })
   userId: number;
 
   @Prop({ required: true })
@@ -28,7 +28,7 @@ export class Reservation extends Entity {
   @Prop({ required: false })
   returnDate?: Date;
 
-  @Prop({ type: Types.Decimal128 })
+  @Prop({ type: schema.Types.Decimal128 })
   lateFees: number;
 
   @Prop({

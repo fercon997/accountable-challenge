@@ -1,11 +1,14 @@
 import { Entity } from '@common/entity';
 import { Prop, SchemaFactory, Schema } from '@nestjs/mongoose';
-import { Types, HydratedDocument } from 'mongoose';
+import { HydratedDocument, Schema as schema } from 'mongoose';
 
 export type BookDocument = HydratedDocument<Book>;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, versionKey: false, _id: false })
 export class Book extends Entity {
+  @Prop()
+  _id: string;
+
   @Prop()
   title: string;
 
@@ -18,8 +21,11 @@ export class Book extends Entity {
   @Prop()
   publisher: string;
 
-  @Prop({ type: Types.Decimal128 })
+  @Prop({ type: schema.Types.Decimal128 })
   price: number;
+
+  @Prop({ default: true })
+  isAvailable: boolean;
 
   constructor(book: Book) {
     super(book);
@@ -28,6 +34,7 @@ export class Book extends Entity {
     this.publisher = book.publisher;
     this.price = book.price;
     this.publicationYear = book.publicationYear;
+    this.isAvailable = book.isAvailable;
   }
 }
 
