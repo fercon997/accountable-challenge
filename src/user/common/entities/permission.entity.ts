@@ -1,7 +1,7 @@
-import { Entity } from '@common/entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { PermissionMap } from '@common/types';
+import { Entity } from '@shared/entity';
+import { PermissionMap } from '@shared/types';
 
 export type PermissionDocument = HydratedDocument<Permission>;
 

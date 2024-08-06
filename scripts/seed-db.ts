@@ -20,7 +20,7 @@ import {
 } from '@user/common/entities';
 import { faker } from '@faker-js/faker';
 import { hash, genSalt } from 'bcrypt';
-import { PermissionMap } from '@common/types';
+import { PermissionMap } from '@shared/types';
 
 async function seedBooks() {
   const file = await converter({ delimiter: ',' }).fromFile(

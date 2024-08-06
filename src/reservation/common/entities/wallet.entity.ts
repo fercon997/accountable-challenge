@@ -1,6 +1,6 @@
-import { Entity } from '@common/entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Schema as schema, HydratedDocument } from 'mongoose';
+import { Entity } from '@shared/entity';
 import { Reservation } from './reservation.entity';
 
 export type WalletDocument = HydratedDocument<Wallet>;

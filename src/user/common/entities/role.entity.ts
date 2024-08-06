@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Entity } from '@common/entity';
 import { HydratedDocument, Schema as schema } from 'mongoose';
+import { Entity } from '@shared/entity';
 import { Permission } from './permission.entity';
 
 export type RoleDocument = HydratedDocument<Role>;
