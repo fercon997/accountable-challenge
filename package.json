@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
+    "@golevelup/ts-jest": "^0.5.0",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
@@ -73,6 +74,12 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
+    "moduleNameMapper": {
+      "@shared(.*)$": "<rootDir>/shared/$1",
+      "@book(.*)$": "<rootDir>/book/$1",
+      "@user(.*)$": "<rootDir>/user/$1",
+      "@reservation(.*)$": "<rootDir>/reservation/$1"
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
