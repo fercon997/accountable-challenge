@@ -6,6 +6,7 @@ import {
   BookDaoService,
   IBookDao,
 } from './data-access/persistence/dao/book-dao';
+import { BookController } from './controllers/book';
 import { BookService, IBookService } from './domain/services/book';
 
 @Module({
@@ -13,10 +14,10 @@ import { BookService, IBookService } from './domain/services/book';
     MongooseModule.forFeature([{ name: Book.name, schema: BookSchema }]),
     SharedModule,
   ],
-  providers: [{ provide: IBookDao, useClass: BookDaoService }],
   providers: [
     { provide: IBookDao, useClass: BookDaoService },
     { provide: IBookService, useClass: BookService },
   ],
+  controllers: [BookController],
 })
 export class BooksModule {}
