@@ -27,6 +27,9 @@ export class Book extends Entity {
   @Prop({ default: true })
   isAvailable: boolean;
 
+  @Prop()
+  genre: string;
+
   constructor(book: Book) {
     super(book);
     this.title = book.title;
@@ -35,6 +38,7 @@ export class Book extends Entity {
     this.price = book.price;
     this.publicationYear = book.publicationYear;
     this.isAvailable = book.isAvailable;
+    this.genre = book.genre;
   }
 }
 

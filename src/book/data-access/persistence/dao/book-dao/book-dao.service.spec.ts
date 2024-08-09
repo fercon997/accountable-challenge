@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { createMock } from '@golevelup/ts-jest';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
 import { Book, BookDocument } from '../../../../common/entities';
 import { BookDaoService } from './book-dao.service';
@@ -35,12 +35,23 @@ describe('BookDaoService', () => {
     publicationYear: 2020,
     author: 'Author',
     publisher: 'Publisher',
+    genre: 'mystery',
   };
 
-  const dbBook: BookDocument = {
+  const bookResult = {
     ...book,
     createdAt: new Date(),
     updatedAt: new Date(),
+  };
+
+  const parseDbBook = (book: Book) => ({
+    ...book,
+    price: new Types.Decimal128(book.price.toString()),
+  });
+
+  const dbBook: BookDocument = {
+    ...parseDbBook(bookResult),
+    toJSON: () => parseDbBook(bookResult),
   } as unknown as BookDocument;
 
   describe('Create Book tests', () => {
@@ -51,7 +62,7 @@ describe('BookDaoService', () => {
 
       const result = await service.create(book);
       expect(result).toBeInstanceOf(Book);
-      expect(result).toEqual(dbBook);
+      expect(result).toEqual(bookResult);
       expect(bookModel.create).toHaveBeenCalledWith(book);
     });
 
@@ -70,7 +81,7 @@ describe('BookDaoService', () => {
 
       const result = await service.getById(book._id);
       expect(result).toBeInstanceOf(Book);
-      expect(result).toEqual(dbBook);
+      expect(result).toEqual(bookResult);
       expect(bookModel.findById).toHaveBeenCalledWith(book._id);
     });
 
@@ -94,22 +105,29 @@ describe('BookDaoService', () => {
     it('should return updated book', async () => {
       const toUpdate: Partial<Book> = {
         title: 'New Title',
+        price: 37,
       };
 
       const returnBook = {
-        ...dbBook,
-        title: toUpdate.title,
+        ...bookResult,
+        ...toUpdate,
+      };
+
+      const returnDbBook = {
+        ...parseDbBook(returnBook),
+        toJSON: () => parseDbBook(returnBook),
       } as unknown as BookDocument;
 
       jest
         .spyOn(bookModel, 'findByIdAndUpdate')
-        .mockResolvedValueOnce(returnBook);
+        .mockResolvedValueOnce(returnDbBook);
 
       const result = await service.update(book._id, toUpdate);
 
       expect(result).toBeInstanceOf(Book);
       expect(result).toEqual(returnBook);
       expect(result.title).toBe(toUpdate.title);
+      expect(result.price).toBe(toUpdate.price);
       expect(bookModel.findByIdAndUpdate).toHaveBeenCalledWith(
         book._id,
         toUpdate,

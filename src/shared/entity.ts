@@ -5,7 +5,7 @@ export abstract class Entity {
 
   constructor(entity: Entity) {
     this._id = entity._id;
-    this.createdAt = entity.createdAt;
-    this.updatedAt = entity.updatedAt;
+    this.createdAt = entity.createdAt ? new Date(entity.createdAt) : null;
+    this.updatedAt = entity.updatedAt ? new Date(entity.updatedAt) : null;
   }
 }

@@ -29,7 +29,16 @@ async function seedBooks() {
 
   const booksModel = mongoose.model('books', BookSchema);
 
+  const bookGenres = [
+    'fiction',
+    'fantasy',
+    'mystery',
+    'novel',
+    'graphic novel',
+    'biography',
+  ];
   const books = file.map((entry) => {
+    const genreId = faker.number.int({ min: 0, max: bookGenres.length - 1 });
     const book: Partial<Book> = {
       _id: entry.id,
       author: entry.author,
@@ -37,6 +46,7 @@ async function seedBooks() {
       publicationYear: entry.publication_year,
       publisher: entry.publisher,
       title: entry.title,
+      genre: bookGenres[genreId],
     };
     return book;
   });

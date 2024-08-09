@@ -6,6 +6,7 @@ import {
   BookDaoService,
   IBookDao,
 } from './data-access/persistence/dao/book-dao';
+import { BookService, IBookService } from './domain/services/book';
 
 @Module({
   imports: [
@@ -13,5 +14,9 @@ import {
     SharedModule,
   ],
   providers: [{ provide: IBookDao, useClass: BookDaoService }],
+  providers: [
+    { provide: IBookDao, useClass: BookDaoService },
+    { provide: IBookService, useClass: BookService },
+  ],
 })
 export class BooksModule {}

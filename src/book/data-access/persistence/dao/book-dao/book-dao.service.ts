@@ -12,10 +12,17 @@ export class BookDaoService implements IBookDao {
     @Inject('LoggerService') private logger: LoggerService,
   ) {}
 
+  private parseBookDocument(book: BookDocument): Book {
+    return new Book({
+      ...book.toJSON(),
+      price: parseFloat(book.price.toString()),
+    });
+  }
+
   async create(book: Book): Promise<Book> {
     try {
       const bookDocument: BookDocument = await this.bookModel.create(book);
-      return new Book(bookDocument);
+      return this.parseBookDocument(bookDocument);
     } catch (error) {
       throw new PersistenceError(this.logger, 'Could not create book', error);
     }
@@ -24,7 +31,7 @@ export class BookDaoService implements IBookDao {
   async getById(id: string): Promise<Book> {
     try {
       const bookDocument: BookDocument = await this.bookModel.findById(id);
-      return bookDocument ? new Book(bookDocument) : null;
+      return bookDocument ? this.parseBookDocument(bookDocument) : null;
     } catch (error) {
       throw new PersistenceError(this.logger, 'Could not get book', error);
     }
@@ -44,8 +51,9 @@ export class BookDaoService implements IBookDao {
       const updated: BookDocument = await this.bookModel.findByIdAndUpdate(
         id,
         book,
+        { returnOriginal: false },
       );
-      return updated ? new Book(updated) : null;
+      return updated ? this.parseBookDocument(updated) : null;
     } catch (error) {
       throw new PersistenceError(this.logger, 'Could not update book', error);
     }
