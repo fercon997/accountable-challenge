@@ -1,5 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsBoolean, IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsString } from 'class-validator';
+import { Genres } from '@shared/types';
 
 export class BookDto {
   @ApiProperty()
@@ -31,8 +32,8 @@ export class BookDto {
   isAvailable: boolean;
 
   @ApiProperty()
-  @IsString()
-  genre: string;
+  @IsEnum(Genres)
+  genre: Genres;
 }
 
 export class UpdateBookDto extends PartialType(BookDto) {}

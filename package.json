@@ -77,6 +77,22 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
+    "coveragePathIgnorePatterns": [
+      "<rootDir>/main.ts",
+      "<rootDir>/http-exception.filter.ts",
+      "index.ts",
+      "<rootDir>/middlewares/http-logger.middleware.ts",
+      "<rootDir>/shared",
+      ".module.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      }
+    },
     "moduleNameMapper": {
       "@shared(.*)$": "<rootDir>/shared/$1",
       "@book(.*)$": "<rootDir>/book/$1",

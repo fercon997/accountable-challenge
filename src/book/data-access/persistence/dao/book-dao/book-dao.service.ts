@@ -2,8 +2,9 @@ import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Promise } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
+import { DbPaginationOptions, PaginationResult } from '@shared/types';
 import { Book, BookDocument } from '../../../../common/entities';
-import { IBookDao } from './book-dao-interface';
+import { IBookDao, SearchFilters } from './book-dao-interface';
 
 @Injectable()
 export class BookDaoService implements IBookDao {
@@ -56,6 +57,29 @@ export class BookDaoService implements IBookDao {
       return updated ? this.parseBookDocument(updated) : null;
     } catch (error) {
       throw new PersistenceError(this.logger, 'Could not update book', error);
+    }
+  }
+
+  async search(
+    { title, author, genre }: SearchFilters,
+    { limit, offset }: DbPaginationOptions,
+  ): Promise<PaginationResult<Book>> {
+    try {
+      const query = this.bookModel
+        .find({ title, author, genre })
+        .limit(limit)
+        .skip(offset);
+
+      return {
+        data: (await query.exec()).map(this.parseBookDocument),
+        totalCount: await query.countDocuments(),
+      };
+    } catch (error) {
+      throw new PersistenceError(
+        this.logger,
+        'Could not search books with selected filters',
+        error,
+      );
     }
   }
 }

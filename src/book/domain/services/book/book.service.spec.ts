@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock } from '@golevelup/ts-jest';
+import { Genres } from '@shared/types';
 import { IBookDao } from '../../../data-access/persistence/dao/book-dao';
 import { Book } from '../../../common/entities';
 import { BookNotFoundError } from '../../../common/errors';
@@ -31,7 +32,7 @@ describe('BookService', () => {
     publicationYear: 2020,
     author: 'Author',
     publisher: 'Publisher',
-    genre: 'mystery',
+    genre: Genres.mystery,
   };
 
   const bookResult = {

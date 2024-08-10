@@ -20,7 +20,7 @@ import {
 } from '@user/common/entities';
 import { faker } from '@faker-js/faker';
 import { hash, genSalt } from 'bcrypt';
-import { PermissionMap } from '@shared/types';
+import { Genres, PermissionMap } from '@shared/types';
 
 async function seedBooks() {
   const file = await converter({ delimiter: ',' }).fromFile(
@@ -29,23 +29,16 @@ async function seedBooks() {
 
   const booksModel = mongoose.model('books', BookSchema);
 
-  const bookGenres = [
-    'fiction',
-    'fantasy',
-    'mystery',
-    'novel',
-    'graphic novel',
-    'biography',
-  ];
+  const bookGenres = Object.values(Genres);
   const books = file.map((entry) => {
     const genreId = faker.number.int({ min: 0, max: bookGenres.length - 1 });
     const book: Partial<Book> = {
       _id: entry.id,
-      author: entry.author,
+      author: entry.author.toLowerCase(),
       price: Number(entry.price),
       publicationYear: entry.publication_year,
       publisher: entry.publisher,
-      title: entry.title,
+      title: entry.title.toLowerCase(),
       genre: bookGenres[genreId],
     };
     return book;

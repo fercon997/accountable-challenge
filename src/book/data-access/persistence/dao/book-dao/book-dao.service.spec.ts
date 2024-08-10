@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { createMock } from '@golevelup/ts-jest';
-import { Model, Types } from 'mongoose';
+import { FilterQuery, Model, Query, Types } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
+import { Genres } from '@shared/types';
 import { Book, BookDocument } from '../../../../common/entities';
 import { BookDaoService } from './book-dao.service';
-import { IBookDao } from './book-dao-interface';
+import { IBookDao, SearchFilters } from './book-dao-interface';
 
 describe('BookDaoService', () => {
   let service: IBookDao;
@@ -35,7 +36,7 @@ describe('BookDaoService', () => {
     publicationYear: 2020,
     author: 'Author',
     publisher: 'Publisher',
-    genre: 'mystery',
+    genre: Genres.mystery,
   };
 
   const bookResult = {
@@ -131,6 +132,7 @@ describe('BookDaoService', () => {
       expect(bookModel.findByIdAndUpdate).toHaveBeenCalledWith(
         book._id,
         toUpdate,
+        { returnOriginal: false },
       );
     });
 
@@ -140,7 +142,9 @@ describe('BookDaoService', () => {
         .mockResolvedValueOnce(undefined);
 
       expect(await service.update(book._id, book)).toBe(null);
-      expect(bookModel.findByIdAndUpdate).toHaveBeenCalledWith(book._id, book);
+      expect(bookModel.findByIdAndUpdate).toHaveBeenCalledWith(book._id, book, {
+        returnOriginal: false,
+      });
     });
 
     it('should throw an error if update fails', async () => {
@@ -181,6 +185,147 @@ describe('BookDaoService', () => {
           PersistenceError,
         );
       });
+    });
+  });
+
+  describe('Search tests', () => {
+    const books: Book[] = [bookResult, bookResult];
+
+    const bookFilter = (
+      book: Book,
+      { title, author, genre }: SearchFilters,
+    ) => {
+      return !(
+        (title && title !== book.title) ||
+        (author && author !== book.author) ||
+        (genre && genre !== book.genre)
+      );
+    };
+
+    const findMock = (books: Book[]) => {
+      return ({ title, author, genre }: FilterQuery<any>) => {
+        return {
+          title,
+          author,
+          genre,
+          skip(skip: number) {
+            this.skip = skip;
+            return this;
+          },
+          limit(limit: number) {
+            this.limit = limit;
+            return this;
+          },
+          exec() {
+            const result = [];
+            const booksFiltered = books.filter((book) =>
+              bookFilter(book, {
+                title: this.title,
+                author: this.author,
+                genre: this.genre,
+              }),
+            );
+            let count = 0;
+            const skip = this.skip || 0;
+            for (let i = skip; i < booksFiltered.length; i++) {
+              if (this.limit && count >= this.limit) {
+                break;
+              }
+              const book = booksFiltered[i];
+              result.push({
+                ...parseDbBook(book),
+                toJSON: () => parseDbBook(book),
+              });
+              count++;
+            }
+            return result;
+          },
+          countDocuments() {
+            return books.filter((book) =>
+              bookFilter(book, {
+                title: this.title,
+                author: this.author,
+                genre: this.genre,
+              }),
+            ).length;
+          },
+        } as unknown as Query<any, any>;
+      };
+    };
+
+    it('should return an array of books with its total count', async () => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      jest.spyOn(bookModel, 'find').mockImplementationOnce(findMock(books));
+
+      expect(await service.search({}, { limit: 10, offset: 0 })).toEqual({
+        data: books,
+        totalCount: books.length,
+      });
+    });
+
+    it('should return books with specified limit and offset', async () => {
+      const correctBook = { ...bookResult, title: 'limit and offset' };
+      const bookRes = [...books, correctBook, bookResult];
+
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      jest.spyOn(bookModel, 'find').mockImplementationOnce(findMock(bookRes));
+
+      expect(await service.search({}, { limit: 1, offset: 2 })).toEqual({
+        data: [correctBook],
+        totalCount: bookRes.length,
+      });
+    });
+
+    it('should return only books that match the filter', async () => {
+      const author = 'author to find';
+      const genre = Genres.biography;
+      const title = 'title to find';
+      const correctBook = { ...bookResult, title, genre, author };
+      const booksRes = [
+        ...books,
+        correctBook,
+        { ...bookResult, genre: genre },
+        { ...bookResult, author },
+      ];
+
+      jest
+        .spyOn(bookModel, 'find')
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        .mockImplementationOnce(findMock(booksRes));
+
+      expect(
+        await service.search(
+          { title, author, genre },
+          { limit: 10, offset: 0 },
+        ),
+      ).toEqual({
+        data: [correctBook],
+        totalCount: 1,
+      });
+    });
+
+    it('should return an empty array when there is nothing to be found', async () => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      jest.spyOn(bookModel, 'find').mockImplementationOnce(findMock([]));
+
+      expect(await service.search({}, { limit: 10, offset: 0 })).toEqual({
+        data: [],
+        totalCount: 0,
+      });
+    });
+
+    it('should throw an error if it fails', async () => {
+      jest.spyOn(bookModel, 'find').mockImplementationOnce(() => {
+        throw new Error('find failed');
+      });
+
+      await expect(
+        service.search({}, { limit: 10, offset: 0 }),
+      ).rejects.toThrow(PersistenceError);
     });
   });
 });

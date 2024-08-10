@@ -26,4 +26,8 @@ export const mapBookToDto = (book: Book): BookDto => {
 };
 
 export const mapDtoToBook = (bookDto: BookDto) =>
-  new Book({ _id: bookDto.id, ...bookDto });
+  new Book({
+    _id: bookDto.id,
+    ...bookDto,
+    author: bookDto.author.toLowerCase(),
+  });

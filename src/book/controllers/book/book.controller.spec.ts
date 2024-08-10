@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock } from '@golevelup/ts-jest';
 import { Response } from '@shared/base.controller';
+import { Genres } from '@shared/types';
 import { IBookService } from '../../domain/services/book';
 import { Book } from '../../common/entities';
 import { BookDto, UpdateBookDto } from '../../domain/dto';
@@ -28,7 +29,7 @@ describe('BookController', () => {
     publicationYear: 2020,
     author: 'Author',
     publisher: 'Publisher',
-    genre: 'mystery',
+    genre: Genres.mystery,
   };
 
   const bookFromDto = (dto: BookDto): Book => {

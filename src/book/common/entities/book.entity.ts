@@ -1,6 +1,7 @@
 import { Prop, SchemaFactory, Schema } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as schema } from 'mongoose';
 import { Entity } from '@shared/entity';
+import { Genres } from '@shared/types';
 
 export type BookDocument = HydratedDocument<Book>;
 
@@ -9,10 +10,10 @@ export class Book extends Entity {
   @Prop()
   _id: string;
 
-  @Prop()
+  @Prop({ index: true })
   title: string;
 
-  @Prop()
+  @Prop({ index: true })
   author: string;
 
   @Prop()
@@ -27,8 +28,8 @@ export class Book extends Entity {
   @Prop({ default: true })
   isAvailable: boolean;
 
-  @Prop()
-  genre: string;
+  @Prop({ enum: Genres, index: true })
+  genre: Genres;
 
   constructor(book: Book) {
     super(book);
