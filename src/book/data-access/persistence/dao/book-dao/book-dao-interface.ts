@@ -1,7 +1,7 @@
 import { DbPaginationOptions, Genres, PaginationResult } from '@shared/types';
 import { Book } from '../../../../common/entities';
 
-export type SearchFilters = {
+export type BookSearchFilters = {
   title?: string;
   author?: string;
   genre?: Genres;
@@ -17,7 +17,7 @@ export interface IBookDao {
   delete(id: string): Promise<boolean>;
 
   search(
-    filters: SearchFilters,
+    filters: BookSearchFilters,
     paginationOptions: DbPaginationOptions,
   ): Promise<PaginationResult<Book>>;
 }

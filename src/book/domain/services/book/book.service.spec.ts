@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock } from '@golevelup/ts-jest';
-import { Genres } from '@shared/types';
+import { Genres, PaginationResult } from '@shared/types';
 import { IBookDao } from '../../../data-access/persistence/dao/book-dao';
 import { Book } from '../../../common/entities';
 import { BookNotFoundError } from '../../../common/errors';
@@ -101,6 +101,93 @@ describe('BookService', () => {
       jest.spyOn(bookDao, 'delete').mockResolvedValueOnce(false);
 
       await expect(service.delete(book._id)).rejects.toThrow(BookNotFoundError);
+    });
+  });
+
+  describe('Search books tests', () => {
+    it('should return books with total count without filters', async () => {
+      const books: Book[] = [bookResult];
+      const result: PaginationResult<Book> = {
+        data: books,
+        totalCount: books.length,
+      };
+
+      jest.spyOn(bookDao, 'search').mockResolvedValueOnce(result);
+
+      expect(await service.search({}, { pageSize: 10, page: 1 })).toEqual(
+        result,
+      );
+    });
+
+    it('should return books with filters', async () => {
+      const author: string = 'search author';
+      const books: Book[] = [bookResult, { ...bookResult, author }];
+      const filtered = books.filter((book) => book.author === author);
+
+      const result: PaginationResult<Book> = {
+        data: filtered,
+        totalCount: filtered.length,
+      };
+
+      jest
+        .spyOn(bookDao, 'search')
+        .mockImplementationOnce(async ({ author }) => {
+          const filtered = books.filter((book) => book.author === author);
+          return { data: filtered, totalCount: filtered.length };
+        });
+
+      expect(
+        await service.search({ author }, { pageSize: 10, page: 1 }),
+      ).toEqual(result);
+    });
+
+    it('should return books with pagination options', async () => {
+      const books: Book[] = [
+        bookResult,
+        { ...bookResult, _id: '1234new' },
+        { ...bookResult, _id: '1234other' },
+      ];
+      const result: PaginationResult<Book> = {
+        data: [books[1]],
+        totalCount: books.length,
+      };
+
+      jest
+        .spyOn(bookDao, 'search')
+        .mockImplementationOnce(async (filters, { limit, offset }) => {
+          let count = 0;
+          const res: Book[] = [];
+          for (let i = offset; i < books.length; i++) {
+            if (count >= limit) {
+              break;
+            }
+            res.push(books[i]);
+            count++;
+          }
+          return {
+            data: res,
+            totalCount: books.length,
+          };
+        });
+
+      expect(await service.search({}, { pageSize: 1, page: 2 })).toEqual(
+        result,
+      );
+    });
+
+    it('should return empty when not found', async () => {
+      const books = [];
+
+      const result: PaginationResult<Book> = {
+        data: books,
+        totalCount: books.length,
+      };
+
+      jest.spyOn(bookDao, 'search').mockResolvedValueOnce(result);
+
+      expect(await service.search({}, { pageSize: 10, page: 1 })).toEqual(
+        result,
+      );
     });
   });
 });

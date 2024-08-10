@@ -6,7 +6,7 @@ import { PersistenceError } from '@shared/errors';
 import { Genres } from '@shared/types';
 import { Book, BookDocument } from '../../../../common/entities';
 import { BookDaoService } from './book-dao.service';
-import { IBookDao, SearchFilters } from './book-dao-interface';
+import { IBookDao, BookSearchFilters } from './book-dao-interface';
 
 describe('BookDaoService', () => {
   let service: IBookDao;
@@ -193,7 +193,7 @@ describe('BookDaoService', () => {
 
     const bookFilter = (
       book: Book,
-      { title, author, genre }: SearchFilters,
+      { title, author, genre }: BookSearchFilters,
     ) => {
       return !(
         (title && title !== book.title) ||

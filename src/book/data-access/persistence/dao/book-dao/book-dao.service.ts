@@ -4,7 +4,7 @@ import { Model, Promise } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
 import { DbPaginationOptions, PaginationResult } from '@shared/types';
 import { Book, BookDocument } from '../../../../common/entities';
-import { IBookDao, SearchFilters } from './book-dao-interface';
+import { IBookDao, BookSearchFilters } from './book-dao-interface';
 
 @Injectable()
 export class BookDaoService implements IBookDao {
@@ -61,7 +61,7 @@ export class BookDaoService implements IBookDao {
   }
 
   async search(
-    { title, author, genre }: SearchFilters,
+    { title, author, genre }: BookSearchFilters,
     { limit, offset }: DbPaginationOptions,
   ): Promise<PaginationResult<Book>> {
     try {

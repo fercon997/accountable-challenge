@@ -29,3 +29,8 @@ export type PaginationResult<T> = {
   data: T[];
   totalCount: number;
 };
+
+export type PaginationOptions = {
+  pageSize: number;
+  page: number;
+};

@@ -1,6 +1,10 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { Promise } from 'mongoose';
-import { IBookDao } from '../../../data-access/persistence/dao/book-dao';
+import { PaginationOptions, PaginationResult } from '@shared/types';
+import {
+  BookSearchFilters,
+  IBookDao,
+} from '../../../data-access/persistence/dao/book-dao';
 import { Book } from '../../../common/entities';
 import { BookNotFoundError } from '../../../common/errors';
 import { IBookService } from './book-service.interface';
@@ -46,6 +50,28 @@ export class BookService implements IBookService {
       throw new BookNotFoundError(this.logger, id);
     }
     this.logger.log(`Book ${id} updated`);
+
+    return result;
+  }
+
+  async search(
+    filters: BookSearchFilters,
+    options: PaginationOptions,
+  ): Promise<PaginationResult<Book>> {
+    this.logger.log(
+      `Searching books with filters ${filters} and options ${options}`,
+    );
+
+    const { page, pageSize } = options;
+
+    const result = await this.bookDao.search(filters, {
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    });
+
+    this.logger.log(
+      `Found ${result.totalCount} books, returning ${pageSize} books corresponding to page ${page} `,
+    );
 
     return result;
   }
