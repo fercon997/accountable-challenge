@@ -7,7 +7,9 @@ import { RouterModule } from '@nestjs/core';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://localhost/accountable'),
+    MongooseModule.forRoot('mongodb://localhost/accountable', {
+      serverSelectionTimeoutMS: 100,
+    }),
     RouterModule.register([
       { path: 'book', module: BooksModule },
       {

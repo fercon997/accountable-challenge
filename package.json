@@ -82,8 +82,8 @@
       "<rootDir>/http-exception.filter.ts",
       "index.ts",
       "<rootDir>/middlewares/http-logger.middleware.ts",
-      "<rootDir>/shared",
-      ".module.ts"
+      ".module.ts",
+      ".dto"
     ],
     "coverageThreshold": {
       "global": {

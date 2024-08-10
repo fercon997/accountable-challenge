@@ -25,9 +25,14 @@ export type DbPaginationOptions = {
   offset: number;
 };
 
-export type PaginationResult<T> = {
+export type DbPaginationResult<T> = {
   data: T[];
   totalCount: number;
+};
+
+export type PaginationResult<T> = DbPaginationResult<T> & {
+  page: number;
+  pageSize: number;
 };
 
 export type PaginationOptions = {

@@ -110,6 +110,8 @@ describe('BookService', () => {
       const result: PaginationResult<Book> = {
         data: books,
         totalCount: books.length,
+        page: 1,
+        pageSize: 10,
       };
 
       jest.spyOn(bookDao, 'search').mockResolvedValueOnce(result);
@@ -127,6 +129,8 @@ describe('BookService', () => {
       const result: PaginationResult<Book> = {
         data: filtered,
         totalCount: filtered.length,
+        page: 1,
+        pageSize: 10,
       };
 
       jest
@@ -150,6 +154,8 @@ describe('BookService', () => {
       const result: PaginationResult<Book> = {
         data: [books[1]],
         totalCount: books.length,
+        page: 2,
+        pageSize: 1,
       };
 
       jest
@@ -181,6 +187,8 @@ describe('BookService', () => {
       const result: PaginationResult<Book> = {
         data: books,
         totalCount: books.length,
+        page: 1,
+        pageSize: 10,
       };
 
       jest.spyOn(bookDao, 'search').mockResolvedValueOnce(result);

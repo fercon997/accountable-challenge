@@ -1,4 +1,4 @@
-import { DbPaginationOptions, Genres, PaginationResult } from '@shared/types';
+import { DbPaginationOptions, DbPaginationResult, Genres } from '@shared/types';
 import { Book } from '../../../../common/entities';
 
 export type BookSearchFilters = {
@@ -19,7 +19,7 @@ export interface IBookDao {
   search(
     filters: BookSearchFilters,
     paginationOptions: DbPaginationOptions,
-  ): Promise<PaginationResult<Book>>;
+  ): Promise<DbPaginationResult<Book>>;
 }
 
 export const IBookDao = Symbol('IBookDao');

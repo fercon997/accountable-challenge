@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock } from '@golevelup/ts-jest';
-import { Response } from '@shared/base.controller';
+import { Response, ResponsePaginated } from '@shared/base.controller';
 import { Genres } from '@shared/types';
 import { IBookService } from '../../domain/services/book';
 import { Book } from '../../common/entities';
-import { BookDto, UpdateBookDto } from '../../domain/dto';
+import { BookDto, PaginationBookDto, UpdateBookDto } from '../../domain/dto';
 import { BookController } from './book.controller';
 
 describe('BookController', () => {
@@ -91,6 +91,66 @@ describe('BookController', () => {
       jest.spyOn(bookService, 'delete').mockResolvedValueOnce(true);
 
       exepctResponse(await controller.delete(book.id), void 0);
+    });
+  });
+
+  describe('GET search tests', () => {
+    it('should return books paginated', async () => {
+      const query: PaginationBookDto = {
+        page: 1,
+        pageSize: 10,
+      };
+
+      const result: ResponsePaginated<BookDto> = {
+        data: [book],
+        totalCount: 1,
+        page: query.page,
+        nextPage: null,
+        totalPages: 1,
+        statusCode: 200,
+      };
+
+      jest
+        .spyOn(bookService, 'search')
+        .mockImplementationOnce(async (filters, { page, pageSize }) => {
+          return {
+            data: [bookFromDto(book)],
+            totalCount: 1,
+            page,
+            pageSize,
+          };
+        });
+
+      expect(await controller.search(query)).toEqual(result);
+    });
+
+    it('should return books and next page', async () => {
+      const query: PaginationBookDto = {
+        page: 1,
+        pageSize: 1,
+      };
+
+      const result: ResponsePaginated<BookDto> = {
+        data: [book],
+        totalCount: 2,
+        page: query.page,
+        nextPage: 2,
+        totalPages: 2,
+        statusCode: 200,
+      };
+
+      jest
+        .spyOn(bookService, 'search')
+        .mockImplementationOnce(async (filters, { page, pageSize }) => {
+          return {
+            data: [bookFromDto(book)],
+            totalCount: 2,
+            page,
+            pageSize,
+          };
+        });
+
+      expect(await controller.search(query)).toEqual(result);
     });
   });
 });

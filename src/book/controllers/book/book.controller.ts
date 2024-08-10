@@ -7,22 +7,45 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { BaseController, Response } from '@shared/base.controller';
-import { ApiOkResponse } from '@shared/decorators';
+import {
+  BaseController,
+  Response,
+  ResponsePaginated,
+} from '@shared/base.controller';
+import { ApiOkResponse, ApiOkResponsePaginated } from '@shared/decorators';
 import { IBookService } from '../../domain/services/book';
 import {
+  mapBookArrayToDto,
   mapBookToDto,
   mapDtoToBook,
 } from '../../domain/mappers/book-dto.mapper';
-import { BookDto, UpdateBookDto } from '../../domain/dto';
+import { BookDto, PaginationBookDto, UpdateBookDto } from '../../domain/dto';
 
 @Controller()
 @ApiTags('Books')
 export class BookController extends BaseController {
   constructor(@Inject(IBookService) private bookService: IBookService) {
     super();
+  }
+
+  @Get('/search')
+  @ApiOkResponsePaginated(BookDto)
+  async search(
+    @Query() options: PaginationBookDto,
+  ): Promise<ResponsePaginated<BookDto>> {
+    const { title, author, genre, page, pageSize } = options;
+    const result = await this.bookService.search(
+      { title, author, genre },
+      { page, pageSize },
+    );
+
+    return this.okPaginated({
+      ...result,
+      data: mapBookArrayToDto(result.data),
+    });
   }
 
   @Get(':id')

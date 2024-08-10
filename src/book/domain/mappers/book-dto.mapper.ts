@@ -31,3 +31,6 @@ export const mapDtoToBook = (bookDto: BookDto) =>
     ...bookDto,
     author: bookDto.author.toLowerCase(),
   });
+
+export const mapBookArrayToDto = (books: Book[]): BookDto[] =>
+  books.map(mapBookToDto);

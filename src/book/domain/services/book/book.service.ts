@@ -73,6 +73,6 @@ export class BookService implements IBookService {
       `Found ${result.totalCount} books, returning ${pageSize} books corresponding to page ${page} `,
     );
 
-    return result;
+    return { ...result, page, pageSize };
   }
 }
