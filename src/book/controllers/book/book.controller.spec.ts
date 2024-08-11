@@ -4,7 +4,13 @@ import { Response, ResponsePaginated } from '@shared/base.controller';
 import { Genres } from '@shared/types';
 import { IBookService } from '../../domain/services/book';
 import { Book } from '../../common/entities';
-import { BookDto, PaginationBookDto, UpdateBookDto } from '../../domain/dto';
+import {
+  BookDto,
+  CreateBookDto,
+  PaginationBookDto,
+  ResponseBookDto,
+  UpdateBookDto,
+} from '../../domain/dto';
 import { BookController } from './book.controller';
 
 describe('BookController', () => {
@@ -25,18 +31,21 @@ describe('BookController', () => {
     id: '1231324hs',
     title: 'title',
     price: 25,
-    isAvailable: true,
     publicationYear: 2020,
     author: 'Author',
     publisher: 'Publisher',
     genre: Genres.mystery,
   };
 
-  const bookFromDto = (dto: BookDto): Book => {
+  const resultBook: ResponseBookDto = { ...book, isAvailable: true };
+
+  const createBook: CreateBookDto = { ...book, quantity: 4 };
+
+  const bookFromDto = (dto: ResponseBookDto): Book => {
     return new Book({ _id: dto.id, ...dto });
   };
 
-  const exepctResponse = <T>(response: Response<T>, data: T): void => {
+  const expectRes = <T>(response: Response<T>, data: T): void => {
     const res: Response<T> = {
       data,
       statusCode: 200,
@@ -48,10 +57,10 @@ describe('BookController', () => {
     it('should create book and return it', async () => {
       jest
         .spyOn(bookService, 'create')
-        .mockResolvedValueOnce(bookFromDto(book));
+        .mockResolvedValueOnce(bookFromDto(resultBook));
 
-      const result = await controller.create(book);
-      exepctResponse(result, book);
+      const result = await controller.create(createBook);
+      expectRes(result, resultBook);
     });
   });
 
@@ -59,9 +68,9 @@ describe('BookController', () => {
     it('should return book when found', async () => {
       jest
         .spyOn(bookService, 'getById')
-        .mockResolvedValueOnce(bookFromDto(book));
+        .mockResolvedValueOnce(bookFromDto(resultBook));
 
-      exepctResponse(await controller.getBook(book.id), book);
+      expectRes(await controller.getBook(book.id), resultBook);
       expect(bookService.getById).toHaveBeenCalledWith(book.id);
     });
   });
@@ -72,8 +81,8 @@ describe('BookController', () => {
         title: 'New title',
       };
 
-      const returnData: BookDto = {
-        ...book,
+      const returnData: ResponseBookDto = {
+        ...resultBook,
         ...update,
       };
 
@@ -81,8 +90,8 @@ describe('BookController', () => {
         .spyOn(bookService, 'update')
         .mockResolvedValueOnce(bookFromDto(returnData));
 
-      const result = await controller.update(book.id, book);
-      exepctResponse(result, returnData);
+      const result = await controller.update(book.id, resultBook);
+      expectRes(result, returnData);
     });
   });
 
@@ -90,7 +99,7 @@ describe('BookController', () => {
     it('should delete book and return 200', async () => {
       jest.spyOn(bookService, 'delete').mockResolvedValueOnce(true);
 
-      exepctResponse(await controller.delete(book.id), void 0);
+      expectRes(await controller.delete(book.id), void 0);
     });
   });
 
@@ -101,8 +110,8 @@ describe('BookController', () => {
         pageSize: 10,
       };
 
-      const result: ResponsePaginated<BookDto> = {
-        data: [book],
+      const result: ResponsePaginated<ResponseBookDto> = {
+        data: [resultBook],
         totalCount: 1,
         page: query.page,
         nextPage: null,
@@ -114,7 +123,7 @@ describe('BookController', () => {
         .spyOn(bookService, 'search')
         .mockImplementationOnce(async (filters, { page, pageSize }) => {
           return {
-            data: [bookFromDto(book)],
+            data: [bookFromDto(resultBook)],
             totalCount: 1,
             page,
             pageSize,
@@ -130,8 +139,8 @@ describe('BookController', () => {
         pageSize: 1,
       };
 
-      const result: ResponsePaginated<BookDto> = {
-        data: [book],
+      const result: ResponsePaginated<ResponseBookDto> = {
+        data: [resultBook],
         totalCount: 2,
         page: query.page,
         nextPage: 2,
@@ -143,7 +152,7 @@ describe('BookController', () => {
         .spyOn(bookService, 'search')
         .mockImplementationOnce(async (filters, { page, pageSize }) => {
           return {
-            data: [bookFromDto(book)],
+            data: [bookFromDto(resultBook)],
             totalCount: 2,
             page,
             pageSize,

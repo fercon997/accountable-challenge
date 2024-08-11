@@ -26,7 +26,7 @@ export class Book extends Entity {
   price: number;
 
   @Prop({ default: true })
-  isAvailable: boolean;
+  isAvailable?: boolean;
 
   @Prop({ enum: Genres, index: true })
   genre: Genres;

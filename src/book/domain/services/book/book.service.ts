@@ -1,6 +1,7 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { Promise } from 'mongoose';
 import { PaginationOptions, PaginationResult } from '@shared/types';
+import { IBookInventoryService } from '@reservation/domain/services/book-inventory';
 import {
   BookSearchFilters,
   IBookDao,
@@ -14,11 +15,17 @@ export class BookService implements IBookService {
   constructor(
     @Inject(IBookDao) private bookDao: IBookDao,
     @Inject('LoggerService') private logger: LoggerService,
+    @Inject(IBookInventoryService)
+    private bookInvService: IBookInventoryService,
   ) {}
 
-  async create(book: Book): Promise<Book> {
+  async create(book: Book, quantity: number): Promise<Book> {
     this.logger.log(`Creating book with id ${book._id}`);
-    const result = await this.bookDao.create(book);
+    await this.bookInvService.create(book._id, quantity);
+    const result = await this.bookDao.create({
+      ...book,
+      isAvailable: quantity > 0,
+    });
     this.logger.log(`Book ${book._id} created`);
     return result;
   }
@@ -43,8 +50,13 @@ export class BookService implements IBookService {
     return book;
   }
 
-  async update(id: string, book: Partial<Book>): Promise<Book> {
+  async update(
+    id: string,
+    book: Partial<Book>,
+    quantity?: number,
+  ): Promise<Book> {
     this.logger.log(`Updating book ${id} with values ${JSON.stringify(book)}`);
+    book = await this.manageQuantityUpdate(id, book, quantity);
     const result = await this.bookDao.update(id, book);
     if (!result) {
       throw new BookNotFoundError(this.logger, id);
@@ -52,6 +64,19 @@ export class BookService implements IBookService {
     this.logger.log(`Book ${id} updated`);
 
     return result;
+  }
+
+  private async manageQuantityUpdate(
+    bookId: string,
+    book: Partial<Book>,
+    quantity?: number,
+  ): Promise<Partial<Book>> {
+    if (quantity !== undefined) {
+      await this.bookInvService.update(bookId, quantity);
+      book.isAvailable = quantity > 0;
+    }
+
+    return book;
   }
 
   async search(

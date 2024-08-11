@@ -1,7 +1,7 @@
 import { Book } from '../../common/entities';
-import { BookDto } from '../dto';
+import { BookDto, ResponseBookDto } from '../dto';
 
-export const mapBookToDto = (book: Book): BookDto => {
+export const mapBookToDto = (book: Book): ResponseBookDto => {
   const {
     _id: id,
     author,
@@ -32,5 +32,5 @@ export const mapDtoToBook = (bookDto: BookDto) =>
     author: bookDto.author.toLowerCase(),
   });
 
-export const mapBookArrayToDto = (books: Book[]): BookDto[] =>
+export const mapBookArrayToDto = (books: Book[]): ResponseBookDto[] =>
   books.map(mapBookToDto);

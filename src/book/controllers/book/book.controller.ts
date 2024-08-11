@@ -22,7 +22,13 @@ import {
   mapBookToDto,
   mapDtoToBook,
 } from '../../domain/mappers/book-dto.mapper';
-import { BookDto, PaginationBookDto, UpdateBookDto } from '../../domain/dto';
+import {
+  BookDto,
+  CreateBookDto,
+  PaginationBookDto,
+  ResponseBookDto,
+  UpdateBookDto,
+} from '../../domain/dto';
 
 @Controller()
 @ApiTags('Books')
@@ -32,7 +38,7 @@ export class BookController extends BaseController {
   }
 
   @Get('/search')
-  @ApiOkResponsePaginated(BookDto)
+  @ApiOkResponsePaginated(ResponseBookDto)
   async search(
     @Query() options: PaginationBookDto,
   ): Promise<ResponsePaginated<BookDto>> {
@@ -49,26 +55,29 @@ export class BookController extends BaseController {
   }
 
   @Get(':id')
-  @ApiOkResponse(BookDto)
+  @ApiOkResponse(ResponseBookDto)
   async getBook(@Param('id') id: string): Promise<Response<BookDto>> {
     const book = await this.bookService.getById(id);
     return this.ok(mapBookToDto(book));
   }
 
   @Post()
-  @ApiOkResponse(BookDto)
-  async create(@Body() bookDto: BookDto): Promise<Response<BookDto>> {
-    const book = await this.bookService.create(mapDtoToBook(bookDto));
+  @ApiOkResponse(ResponseBookDto)
+  async create(@Body() bookDto: CreateBookDto): Promise<Response<BookDto>> {
+    const book = await this.bookService.create(
+      mapDtoToBook(bookDto),
+      bookDto.quantity,
+    );
     return this.ok(mapBookToDto(book));
   }
 
   @Patch(':id')
-  @ApiOkResponse(BookDto)
+  @ApiOkResponse(ResponseBookDto)
   async update(
     @Param('id') id: string,
-    @Body() bookDto?: UpdateBookDto,
+    @Body() bookDto: UpdateBookDto,
   ): Promise<Response<BookDto>> {
-    const book = await this.bookService.update(id, bookDto);
+    const book = await this.bookService.update(id, bookDto, bookDto.quantity);
     return this.ok(mapBookToDto(book));
   }
 

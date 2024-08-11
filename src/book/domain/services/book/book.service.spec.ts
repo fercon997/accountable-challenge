@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock } from '@golevelup/ts-jest';
 import { Genres, PaginationResult } from '@shared/types';
+import { IBookInventoryService } from '@reservation/domain/services/book-inventory';
+import { Query } from 'mongoose';
 import { IBookDao } from '../../../data-access/persistence/dao/book-dao';
 import { Book } from '../../../common/entities';
 import { BookNotFoundError } from '../../../common/errors';
@@ -10,6 +12,7 @@ import { IBookService } from './book-service.interface';
 describe('BookService', () => {
   let service: IBookService;
   let bookDao: IBookDao;
+  let bookInvService: IBookInventoryService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -17,11 +20,13 @@ describe('BookService', () => {
         { provide: IBookService, useClass: BookService },
         { provide: IBookDao, useValue: createMock() },
         { provide: 'LoggerService', useValue: createMock() },
+        { provide: IBookInventoryService, useValue: createMock() },
       ],
     }).compile();
 
     service = module.get<IBookService>(IBookService);
     bookDao = module.get<IBookDao>(IBookDao);
+    bookInvService = module.get<IBookInventoryService>(IBookInventoryService);
   });
 
   const book: Book = {
@@ -42,12 +47,27 @@ describe('BookService', () => {
   };
 
   describe('Create book tests', () => {
-    it('should return the created book', async () => {
+    it('should return the created book and be available', async () => {
       jest.spyOn(bookDao, 'create').mockResolvedValueOnce(bookResult);
+      jest.spyOn(bookInvService, 'create').mockResolvedValueOnce({} as any);
 
-      const result = await service.create(book);
+      const result = await service.create(book, 5);
       expect(result).toEqual(bookResult);
       expect(bookDao.create).toHaveBeenCalledWith(book);
+    });
+
+    it('should return the created book and not available', async () => {
+      jest.spyOn(bookDao, 'create').mockImplementationOnce((book) => {
+        return {
+          ...book,
+          createdAt: bookResult.createdAt,
+          updatedAt: bookResult.updatedAt,
+        } as unknown as Query<any, any>;
+      });
+      jest.spyOn(bookInvService, 'create').mockResolvedValueOnce({} as any);
+
+      const result = await service.create(book, 0);
+      expect(result).toEqual({ ...bookResult, isAvailable: false });
     });
   });
 
@@ -70,10 +90,18 @@ describe('BookService', () => {
   });
 
   describe('Update book tests', () => {
+    beforeEach(() => {
+      jest.spyOn(bookDao, 'update').mockImplementationOnce(async (id, book) => {
+        if (id === bookResult._id) {
+          return new Book({ ...bookResult, ...book });
+        }
+        return null;
+      });
+    });
+
     it('should return the book', async () => {
       const toUpdate: Partial<Book> = { title: 'New Title', price: 42 };
       const bookRes = { ...bookResult, ...toUpdate };
-      jest.spyOn(bookDao, 'update').mockResolvedValueOnce(bookRes);
 
       const result = await service.update(book._id, toUpdate);
       expect(result).toEqual(bookRes);
@@ -81,11 +109,18 @@ describe('BookService', () => {
     });
 
     it('should throw an error when it is not found', async () => {
-      jest.spyOn(bookDao, 'update').mockResolvedValueOnce(null);
-
-      await expect(service.update(book._id, { title: 'New' })).rejects.toThrow(
+      await expect(service.update('1213sa', { title: 'New' })).rejects.toThrow(
         BookNotFoundError,
       );
+    });
+
+    it('should change is available when quantity is sent', async () => {
+      jest.spyOn(bookInvService, 'update').mockResolvedValueOnce({} as any);
+
+      expect(await service.update(book._id, {}, 0)).toEqual({
+        ...bookResult,
+        isAvailable: false,
+      });
     });
   });
 

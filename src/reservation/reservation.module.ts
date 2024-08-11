@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { SharedModule } from '@shared/shared.module';
 import {
   BookInventory,
   BookInventorySchema,
@@ -24,6 +25,7 @@ import {
       { name: Wallet.name, schema: WalletSchema },
       { name: BookInventory.name, schema: BookInventorySchema },
     ]),
+    SharedModule,
   ],
   providers: [
     { provide: IBookInventoryDao, useClass: BookInventoryDaoService },

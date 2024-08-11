@@ -3,11 +3,11 @@ import { Book } from '../../../common/entities';
 import { BookSearchFilters } from '../../../data-access/persistence/dao/book-dao';
 
 export interface IBookService {
-  create(book: Book): Promise<Book>;
+  create(book: Book, quantity: number): Promise<Book>;
 
   getById(id: string): Promise<Book>;
 
-  update(id: string, book: Partial<Book>): Promise<Book>;
+  update(id: string, book: Partial<Book>, quantity?: number): Promise<Book>;
 
   delete(id: string): Promise<boolean>;
 

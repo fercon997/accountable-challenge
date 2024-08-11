@@ -4,11 +4,11 @@ import {
   IsEnum,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
 } from 'class-validator';
 import { Genres } from '@shared/types';
 import { PaginationDto } from '@shared/dto';
-import { fa } from '@faker-js/faker';
 
 export class BookDto {
   @ApiProperty()
@@ -36,15 +36,24 @@ export class BookDto {
   price: number;
 
   @ApiProperty()
-  @IsBoolean()
-  isAvailable: boolean;
-
-  @ApiProperty()
   @IsEnum(Genres)
   genre: Genres;
 }
 
-export class UpdateBookDto extends PartialType(BookDto) {}
+export class ResponseBookDto extends BookDto {
+  @ApiProperty()
+  @IsBoolean()
+  isAvailable: boolean;
+}
+
+export class CreateBookDto extends BookDto {
+  @ApiProperty()
+  @IsNumber()
+  @IsPositive()
+  quantity: number;
+}
+
+export class UpdateBookDto extends PartialType(CreateBookDto) {}
 
 export class PaginationBookDto extends PaginationDto {
   @ApiProperty({ required: false })
