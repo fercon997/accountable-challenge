@@ -17,6 +17,10 @@ import {
   BookInventoryService,
   IBookInventoryService,
 } from './domain/services/book-inventory';
+import {
+  WalletDaoService,
+  IWalletDao,
+} from './data-access/persistence/dao/wallet-dao';
 
 @Module({
   imports: [
@@ -30,6 +34,7 @@ import {
   providers: [
     { provide: IBookInventoryDao, useClass: BookInventoryDaoService },
     { provide: IBookInventoryService, useClass: BookInventoryService },
+    { provide: IWalletDao, useClass: WalletDaoService },
   ],
   exports: [IBookInventoryService],
 })

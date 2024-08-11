@@ -14,7 +14,13 @@ export class Wallet extends Entity {
   })
   userId: string;
 
-  @Prop({ type: schema.Types.Decimal128, required: true })
+  @Prop({
+    type: schema.Types.Decimal128,
+    required: true,
+    validate(value: number) {
+      return value >= 0;
+    },
+  })
   balance: number;
 
   @Prop({
@@ -35,3 +41,7 @@ export class Wallet extends Entity {
 }
 
 export const WalletSchema = SchemaFactory.createForClass(Wallet);
+WalletSchema.pre('findOneAndUpdate', function (next) {
+  this.setOptions({ runValidators: true });
+  next();
+});
