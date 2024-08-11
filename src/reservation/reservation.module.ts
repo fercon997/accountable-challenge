@@ -8,6 +8,10 @@ import {
   Wallet,
   WalletSchema,
 } from './common/entities';
+import {
+  BookInventoryDaoService,
+  IBookInventoryDao,
+} from './data-access/persistence/dao/book-inventory-dao';
 
 @Module({
   imports: [
@@ -16,6 +20,9 @@ import {
       { name: Wallet.name, schema: WalletSchema },
       { name: BookInventory.name, schema: BookInventorySchema },
     ]),
+  ],
+  providers: [
+    { provide: IBookInventoryDao, useClass: BookInventoryDaoService },
   ],
 })
 export class ReservationModule {}

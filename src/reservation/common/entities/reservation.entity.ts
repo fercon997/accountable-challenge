@@ -5,6 +5,8 @@ import { Entity } from '@shared/entity';
 export type ReservationDocument = HydratedDocument<Reservation>;
 
 export enum ReservationStatus {
+  pending = 'pending',
+
   reserved = 'reserved',
   late = 'late',
   bought = 'bought',
@@ -19,6 +21,9 @@ export class Reservation extends Entity {
   @Prop({ type: schema.Types.ObjectId, required: true })
   userId: number;
 
+  @Prop({ type: schema.Types.Decimal128, required: true })
+  price: number;
+
   @Prop({ required: true })
   reservationDate: Date;
 
@@ -29,12 +34,12 @@ export class Reservation extends Entity {
   returnDate?: Date;
 
   @Prop({ type: schema.Types.Decimal128 })
-  lateFees: number;
+  lateFees?: number;
 
   @Prop({
     type: String,
     enum: ReservationStatus,
-    default: ReservationStatus.reserved,
+    default: ReservationStatus.pending,
   })
   status: ReservationStatus;
 
