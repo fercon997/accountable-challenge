@@ -12,6 +12,10 @@ import {
   BookInventoryDaoService,
   IBookInventoryDao,
 } from './data-access/persistence/dao/book-inventory-dao';
+import {
+  BookInventoryService,
+  IBookInventoryService,
+} from './domain/services/book-inventory';
 
 @Module({
   imports: [
@@ -23,6 +27,8 @@ import {
   ],
   providers: [
     { provide: IBookInventoryDao, useClass: BookInventoryDaoService },
+    { provide: IBookInventoryService, useClass: BookInventoryService },
   ],
+  exports: [IBookInventoryService],
 })
 export class ReservationModule {}
