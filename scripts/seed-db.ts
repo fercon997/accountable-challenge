@@ -57,9 +57,10 @@ async function seedBooks() {
   });
 
   const booksInventoryModel = mongoose.model(
-    'booksInventory',
+    'BookInventory',
     BookInventorySchema,
   );
+
   await booksInventoryModel.create(booksInventory);
 }
 
@@ -97,7 +98,7 @@ async function seedUsers() {
     role: userRole,
   });
 
-  const usersModel = mongoose.model('users', UserSchema);
+  const usersModel = mongoose.model('User', UserSchema);
 
   const adminUser = new User({
     name: 'Admin',

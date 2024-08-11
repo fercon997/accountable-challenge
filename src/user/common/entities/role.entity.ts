@@ -5,7 +5,7 @@ import { Permission } from './permission.entity';
 
 export type RoleDocument = HydratedDocument<Role>;
 
-@Schema()
+@Schema({ timestamps: true })
 export class Role extends Entity {
   @Prop()
   name: string;
