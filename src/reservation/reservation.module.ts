@@ -23,6 +23,8 @@ import {
 } from './data-access/persistence/dao/wallet-dao';
 import { WalletService, IWalletService } from './domain/services/wallet';
 import { WalletController } from './controllers/wallet/wallet.controller';
+import { ReservationDaoService } from './data-access/persistence/dao/reservation-dao/reservation-dao.service';
+import { IReservationDao } from './data-access/persistence/dao/reservation-dao/reservation-dao.interface';
 
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { WalletController } from './controllers/wallet/wallet.controller';
     { provide: IBookInventoryService, useClass: BookInventoryService },
     { provide: IWalletDao, useClass: WalletDaoService },
     { provide: IWalletService, useClass: WalletService },
+    { provide: IReservationDao, useClass: ReservationDaoService },
   ],
   exports: [IBookInventoryService],
   controllers: [WalletController],

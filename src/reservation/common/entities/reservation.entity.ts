@@ -41,18 +41,21 @@ export class Reservation extends Entity {
     enum: ReservationStatus,
     default: ReservationStatus.pending,
   })
-  status: ReservationStatus;
+  status?: ReservationStatus;
+
+  version?: number;
 
   constructor(reservation: Reservation) {
     super(reservation);
-    this.bookId = reservation.bookId;
-    this.userId = reservation.userId;
+    this.bookId = reservation.bookId.toString();
+    this.userId = reservation.userId.toString();
     this.reservationDate = reservation.reservationDate;
     this.expectedReturnDate = reservation.expectedReturnDate;
     this.returnDate = reservation.returnDate;
     this.lateFees = reservation.lateFees;
     this.status = reservation.status;
     this.price = reservation.price;
+    this.version = reservation.version;
   }
 }
 
