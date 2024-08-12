@@ -22,6 +22,7 @@ import {
   IWalletDao,
 } from './data-access/persistence/dao/wallet-dao';
 import { WalletService, IWalletService } from './domain/services/wallet';
+import { WalletController } from './controllers/wallet/wallet.controller';
 
 @Module({
   imports: [
@@ -39,5 +40,6 @@ import { WalletService, IWalletService } from './domain/services/wallet';
     { provide: IWalletService, useClass: WalletService },
   ],
   exports: [IBookInventoryService],
+  controllers: [WalletController],
 })
 export class ReservationModule {}

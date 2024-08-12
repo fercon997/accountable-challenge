@@ -3,7 +3,13 @@ import { getModelToken } from '@nestjs/mongoose';
 import { createMock } from '@golevelup/ts-jest';
 import { FilterQuery, Model, Query, Types } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
-import { Wallet, WalletDocument } from '../../../../common/entities';
+import {
+  Reservation,
+  ReservationDocument,
+  ReservationStatus,
+  Wallet,
+  WalletDocument,
+} from '../../../../common/entities';
 import { IWalletDao } from './wallet-dao.interface';
 import { WalletDaoService } from './wallet-dao.service';
 
@@ -44,6 +50,27 @@ describe('WalletDaoService', () => {
     updatedAt,
   };
 
+  const reservation: Reservation = {
+    bookId: 'adasd',
+    userId: userId.toString(),
+    price: 25,
+    reservationDate: new Date(),
+    expectedReturnDate: new Date(),
+    status: ReservationStatus.reserved,
+  };
+
+  const reservationRes: Reservation = {
+    ...reservation,
+    _id: _id.toString(),
+    createdAt,
+    updatedAt,
+  };
+
+  const walletWithReserve: Wallet = {
+    ...walletRes,
+    reservations: [reservationRes],
+  };
+
   const genWalletDoc = (wallet: Wallet) => {
     const wall = {
       ...wallet,
@@ -57,6 +84,21 @@ describe('WalletDaoService', () => {
       toJSON: () => wall,
       balance: new Types.Decimal128(wall.balance.toString()),
     } as unknown as WalletDocument;
+  };
+
+  const genResDoc = (reservation: Reservation) => {
+    const res = {
+      ...reservation,
+      _id,
+      price: reservation.price,
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
+    };
+    return {
+      ...res,
+      toJSON: () => res,
+      price: new Types.Decimal128(reservation.price.toString()),
+    } as unknown as ReservationDocument;
   };
 
   const updateMock =
@@ -76,9 +118,21 @@ describe('WalletDaoService', () => {
       return null;
     };
 
-  const getMock = ({ userId: id }: FilterQuery<Wallet>): Query<any, any> => {
+  const get = (id: string) => {
     if (id === userId.toString()) {
-      return genWalletDoc(wallet) as unknown as Query<any, any>;
+      return genWalletDoc(wallet);
+    }
+  };
+
+  const getMock = ({ userId: id }: FilterQuery<Wallet>): Query<any, any> => {
+    const wallet = get(id);
+    if (wallet) {
+      return {
+        ...wallet,
+        populate() {
+          this.reservations = [genResDoc(reservation)];
+        },
+      } as unknown as Query<any, any>;
     }
   };
 
@@ -133,6 +187,17 @@ describe('WalletDaoService', () => {
       });
 
       await expect(service.get('asa112312')).rejects.toThrow(PersistenceError);
+    });
+
+    it('should call populate when asked for', async () => {
+      jest.spyOn(walletModel, 'findOne').mockImplementationOnce(getMock);
+
+      const result = await service.get(userId.toString(), true);
+      expect(result).toEqual(walletWithReserve);
+      expect(result).toBeInstanceOf(Wallet);
+      expect(result.reservations).toHaveLength(1);
+      expect(result.reservations[0]).toEqual(reservationRes);
+      expect(result.reservations[0]).toBeInstanceOf(Reservation);
     });
   });
 

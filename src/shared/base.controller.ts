@@ -1,22 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ValidateNested } from 'class-validator';
-import { BookDto } from '@book/domain/dto';
 import { PaginationResult } from './types';
 
-export class Response<T> {
-  @ApiProperty()
-  @ValidateNested()
-  data: T;
-
+export class BaseResponse {
   @ApiProperty()
   statusCode: number;
 }
 
-export class ResponsePaginated<T> {
-  data: T[];
-
+export class Response<T> extends BaseResponse {
   @ApiProperty()
-  statusCode: number;
+  @ValidateNested()
+  data: T;
+}
+
+export class ResponsePaginated<T> extends BaseResponse {
+  data: T[];
 
   @ApiProperty()
   page: number;

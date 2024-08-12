@@ -45,7 +45,6 @@ describe('WalletService', () => {
   const updateMock =
     (options: 'inc' | 'dec', wall = wallet) =>
     async (id: string, balance: number, version?: number): Promise<Wallet> => {
-      console.info(userId, version, wall);
       if (
         userId === id &&
         (version === undefined || wall.version === version)

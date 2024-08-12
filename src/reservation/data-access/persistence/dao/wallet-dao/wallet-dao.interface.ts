@@ -9,7 +9,7 @@ export interface IWalletDao {
     version?: number,
   ): Promise<Wallet>;
 
-  get(userId: string): Promise<Wallet>;
+  get(userId: string, reservations?: boolean): Promise<Wallet>;
 }
 
 export const IWalletDao = Symbol('IWalletDao');

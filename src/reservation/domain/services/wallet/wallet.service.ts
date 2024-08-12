@@ -31,9 +31,9 @@ export class WalletService implements IWalletService {
     return result;
   }
 
-  async get(userId: string): Promise<Wallet> {
+  async get(userId: string, reservation?: boolean): Promise<Wallet> {
     this.logger.log(`Getting wallet for user ${userId}`);
-    const result = await this.walletDao.get(userId);
+    const result = await this.walletDao.get(userId, reservation);
 
     this.manageNotFound(result, userId);
 

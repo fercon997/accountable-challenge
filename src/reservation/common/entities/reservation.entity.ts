@@ -16,10 +16,10 @@ export enum ReservationStatus {
 @Schema({ autoIndex: true, versionKey: 'version' })
 export class Reservation extends Entity {
   @Prop({ type: schema.Types.ObjectId, required: true })
-  bookId: number;
+  bookId: string;
 
   @Prop({ type: schema.Types.ObjectId, required: true })
-  userId: number;
+  userId: string;
 
   @Prop({ type: schema.Types.Decimal128, required: true })
   price: number;
@@ -52,6 +52,7 @@ export class Reservation extends Entity {
     this.returnDate = reservation.returnDate;
     this.lateFees = reservation.lateFees;
     this.status = reservation.status;
+    this.price = reservation.price;
   }
 }
 
