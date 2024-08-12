@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { createMock } from '@golevelup/ts-jest';
-import { Model, Query, Types } from 'mongoose';
+import { FilterQuery, Model, Query, Types } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
-import { Wallet } from '../../../../common/entities';
+import { Wallet, WalletDocument } from '../../../../common/entities';
 import { IWalletDao } from './wallet-dao.interface';
 import { WalletDaoService } from './wallet-dao.service';
 
@@ -35,6 +35,7 @@ describe('WalletDaoService', () => {
     userId: userId.toString(),
     balance: 0,
     reservations: [],
+    version: 0,
   };
   const walletRes: Wallet = {
     ...wallet,
@@ -43,25 +44,43 @@ describe('WalletDaoService', () => {
     updatedAt,
   };
 
+  const genWalletDoc = (wallet: Wallet) => {
+    const wall = {
+      ...wallet,
+      _id,
+      balance: wallet.balance,
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
+    };
+    return {
+      ...wall,
+      toJSON: () => wall,
+      balance: new Types.Decimal128(wall.balance.toString()),
+    } as unknown as WalletDocument;
+  };
+
   const updateMock =
     (wallet: Wallet) =>
-    ({ userId: id }, { $inc: { balance } }) => {
-      if (id === userId.toString()) {
-        const wall = {
-          ...wallet,
-          _id,
-          balance: wallet.balance + balance,
-          createdAt: createdAt.toISOString(),
-          updatedAt: updatedAt.toISOString(),
-        };
+    ({ userId: id, version }, { $inc: { balance } }) => {
+      if (
+        id === userId.toString() &&
+        (!version || wallet.version === version)
+      ) {
+        const wall = genWalletDoc(wallet);
+        const actualBalance = parseFloat(wall.balance.toString());
         return {
           ...wall,
-          toJSON: () => wall,
-          balance: new Types.Decimal128(wall.balance.toString()),
+          balance: new Types.Decimal128((actualBalance + balance).toString()),
         } as unknown as Query<any, any>;
       }
       return null;
     };
+
+  const getMock = ({ userId: id }: FilterQuery<Wallet>): Query<any, any> => {
+    if (id === userId.toString()) {
+      return genWalletDoc(wallet) as unknown as Query<any, any>;
+    }
+  };
 
   describe('Increment balance tests', () => {
     const mock = updateMock(wallet);
@@ -95,6 +114,28 @@ describe('WalletDaoService', () => {
     });
   });
 
+  describe('Get balance tests', () => {
+    it('should return wallet', async () => {
+      jest.spyOn(walletModel, 'findOne').mockImplementationOnce(getMock);
+      const result = await service.get(userId.toString());
+      expect(result).toEqual(walletRes);
+      expect(result).toBeInstanceOf(Wallet);
+    });
+
+    it('should return null if not found', async () => {
+      jest.spyOn(walletModel, 'findOne').mockImplementationOnce(getMock);
+      expect(await service.get('123123as')).toBeNull();
+    });
+
+    it('should throw an error if something fails', async () => {
+      jest.spyOn(walletModel, 'findOne').mockImplementationOnce(() => {
+        throw new Error('couldnt get');
+      });
+
+      await expect(service.get('asa112312')).rejects.toThrow(PersistenceError);
+    });
+  });
+
   describe('Decrement balance tests', () => {
     const decWallet = { ...wallet, balance: 20 };
     const mock = updateMock(decWallet);
@@ -122,6 +163,14 @@ describe('WalletDaoService', () => {
       jest.spyOn(walletModel, 'findOneAndUpdate').mockImplementationOnce(mock);
 
       expect(await service.decrementBalance('1asadsa', 12)).toBeNull();
+    });
+
+    it('should return null if version not found', async () => {
+      jest.spyOn(walletModel, 'findOneAndUpdate').mockImplementationOnce(mock);
+
+      expect(
+        await service.decrementBalance(userId.toString(), 5, 1),
+      ).toBeNull();
     });
 
     it('should throw error if something fails', async () => {

@@ -1,9 +1,9 @@
-import { LoggerService, NotFoundException } from '@nestjs/common';
+import { LoggerService } from '@nestjs/common';
+import { NotFoundError } from '@shared/errors';
 
-export class BookNotFoundError extends NotFoundException {
+export class BookNotFoundError extends NotFoundError {
   constructor(logger: LoggerService, id: string, inner?: Error) {
     const message = `Book with id ${id} not found`;
-    logger.error(message);
-    super(inner, message);
+    super(logger, message, inner);
   }
 }
