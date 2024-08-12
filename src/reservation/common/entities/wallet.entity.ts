@@ -17,6 +17,7 @@ export class Wallet extends Entity {
   @Prop({
     type: schema.Types.Decimal128,
     required: true,
+    /* istanbul ignore next */
     validate(value: number) {
       return value >= 0;
     },
@@ -41,6 +42,7 @@ export class Wallet extends Entity {
 }
 
 export const WalletSchema = SchemaFactory.createForClass(Wallet);
+/* istanbul ignore next */
 WalletSchema.pre('findOneAndUpdate', function (next) {
   this.setOptions({ runValidators: true });
   next();

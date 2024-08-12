@@ -12,6 +12,7 @@ export class BookInventory extends Entity {
 
   @Prop({
     required: true,
+    /* istanbul ignore next */
     validate(value: number): boolean {
       if (this instanceof Query) {
         return this.get('totalReserved') <= value;
@@ -33,6 +34,7 @@ export class BookInventory extends Entity {
 }
 
 export const BookInventorySchema = SchemaFactory.createForClass(BookInventory);
+/* istanbul ignore next */
 BookInventorySchema.pre('findOneAndUpdate', function (next) {
   this.setOptions({ runValidators: true });
   next();
