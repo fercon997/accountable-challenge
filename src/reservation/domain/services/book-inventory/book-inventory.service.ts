@@ -1,4 +1,6 @@
-import { Inject, Injectable, LoggerService } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, LoggerService } from '@nestjs/common';
+import { IBookService } from '@book/domain/services/book/book-service.interface';
+import { VersionChangedError } from '@shared/errors';
 import { IBookInventoryDao } from '../../../data-access/persistence/dao/book-inventory-dao';
 import { BookInventory } from '../../../common/entities';
 import {
@@ -12,6 +14,7 @@ export class BookInventoryService implements IBookInventoryService {
   constructor(
     @Inject(IBookInventoryDao) private bookInvDao: IBookInventoryDao,
     @Inject('LoggerService') private logger: LoggerService,
+    @Inject(forwardRef(() => IBookService)) private bookService: IBookService,
   ) {}
 
   async create(bookId: string, quantity: number): Promise<BookInventory> {
@@ -58,5 +61,60 @@ export class BookInventoryService implements IBookInventoryService {
 
     this.logger.log(`Deleted book ${bookId} inventory`);
     return res;
+  }
+
+  async addReservation(bookId: string): Promise<BookInventory> {
+    this.logger.log(`Adding reservation to bookId ${bookId} count`);
+    const amount = 1;
+    const bookInv = await this.get(bookId);
+    if (bookInv.totalReserved === bookInv.totalInventory) {
+      throw new InvalidQuantityError(this.logger, bookId, amount);
+    }
+
+    const result = await this.bookInvDao.updateReserved(
+      bookId,
+      amount,
+      bookInv.version,
+    );
+
+    this.handleVersionChanged(result);
+
+    if (result.totalInventory === result.totalReserved) {
+      await this.bookService.update(bookId, { isAvailable: false });
+    }
+
+    this.logger.log('Reservation count addeed successfully');
+    return result;
+  }
+
+  async releaseReservation(bookId: string): Promise<BookInventory> {
+    this.logger.log(`Removing reservation from book ${bookId} count`);
+    const amount = -1;
+    const bookInv = await this.get(bookId);
+
+    if (bookInv.totalReserved === 0) {
+      throw new InvalidQuantityError(this.logger, bookId, amount);
+    }
+
+    const result = await this.bookInvDao.updateReserved(
+      bookId,
+      amount,
+      bookInv.version,
+    );
+
+    this.handleVersionChanged(result);
+
+    if (bookInv.totalReserved === bookInv.totalInventory) {
+      await this.bookService.update(bookId, { isAvailable: true });
+    }
+
+    this.logger.log('Reservation successfully removed from count');
+    return result;
+  }
+
+  private handleVersionChanged(result: BookInventory) {
+    if (!result) {
+      throw new VersionChangedError(this.logger, BookInventory.name);
+    }
   }
 }

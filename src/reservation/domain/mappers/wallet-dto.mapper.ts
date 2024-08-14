@@ -1,5 +1,5 @@
 import { WalletDto } from '../dto';
-import { Wallet } from '../../common/entities';
+import { Reservation, Wallet } from '../../common/entities';
 import { mapReservationArrayToDto } from './reservation-dto.mapper';
 
 export const mapWalletToDto = (wallet: Wallet): WalletDto => {
@@ -9,6 +9,6 @@ export const mapWalletToDto = (wallet: Wallet): WalletDto => {
     id,
     userId,
     balance,
-    reservations: mapReservationArrayToDto(reservations),
+    reservations: mapReservationArrayToDto(reservations as Reservation[]),
   };
 };

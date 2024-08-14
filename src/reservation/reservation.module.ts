@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SharedModule } from '@shared/shared.module';
+import { BooksModule } from '@book/books.module';
 import {
   BookInventory,
   BookInventorySchema,
@@ -25,6 +26,9 @@ import { WalletService, IWalletService } from './domain/services/wallet';
 import { WalletController } from './controllers/wallet/wallet.controller';
 import { ReservationDaoService } from './data-access/persistence/dao/reservation-dao/reservation-dao.service';
 import { IReservationDao } from './data-access/persistence/dao/reservation-dao/reservation-dao.interface';
+import { ReservationService } from './domain/services/reservation/reservation.service';
+import { ReservationController } from './controllers/reservation/reservation.controller';
+import { IReservationService } from './domain/services/reservation/reservation-service.interface';
 
 @Module({
   imports: [
@@ -34,6 +38,7 @@ import { IReservationDao } from './data-access/persistence/dao/reservation-dao/r
       { name: BookInventory.name, schema: BookInventorySchema },
     ]),
     SharedModule,
+    forwardRef(() => BooksModule),
   ],
   providers: [
     { provide: IBookInventoryDao, useClass: BookInventoryDaoService },
@@ -41,6 +46,7 @@ import { IReservationDao } from './data-access/persistence/dao/reservation-dao/r
     { provide: IWalletDao, useClass: WalletDaoService },
     { provide: IWalletService, useClass: WalletService },
     { provide: IReservationDao, useClass: ReservationDaoService },
+    { provide: IReservationService, useClass: ReservationService },
   ],
   exports: [IBookInventoryService],
   controllers: [WalletController],

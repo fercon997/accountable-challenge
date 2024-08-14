@@ -1,7 +1,6 @@
-import { Inject, Injectable, LoggerService } from '@nestjs/common';
-import { Promise } from 'mongoose';
+import { forwardRef, Inject, Injectable, LoggerService } from '@nestjs/common';
 import { PaginationOptions, PaginationResult } from '@shared/types';
-import { IBookInventoryService } from '@reservation/domain/services/book-inventory';
+import { IBookInventoryService } from '@reservation/domain/services/book-inventory/book-inventory-service.interface';
 import {
   BookSearchFilters,
   IBookDao,
@@ -15,7 +14,7 @@ export class BookService implements IBookService {
   constructor(
     @Inject(IBookDao) private bookDao: IBookDao,
     @Inject('LoggerService') private logger: LoggerService,
-    @Inject(IBookInventoryService)
+    @Inject(forwardRef(() => IBookInventoryService))
     private bookInvService: IBookInventoryService,
   ) {}
 

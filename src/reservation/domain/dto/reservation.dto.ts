@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsDate,
+  IsDateString,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -18,7 +18,7 @@ export class CreateReservationDto {
   userId: string;
 
   @ApiProperty()
-  @IsDate()
+  @IsDateString()
   expectedReturnDate: Date;
 }
 

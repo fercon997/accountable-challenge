@@ -7,6 +7,8 @@ import { Wallet } from '../../../common/entities';
 import {
   WalletNotFoundError,
   InvalidBalanceError,
+  MaxAmountOfReservationsError,
+  ReservationNotFoundError,
 } from '../../../common/errors';
 import { WalletService } from './wallet.service';
 import { IWalletService } from './wallet-service.interface';
@@ -29,6 +31,13 @@ describe('WalletService', () => {
 
     service = module.get<IWalletService>(IWalletService);
     walletDao = module.get<IWalletDao>(IWalletDao);
+
+    jest.spyOn(walletDao, 'get').mockImplementationOnce(async (id) => {
+      if (id === userId) {
+        return wallet;
+      }
+      return null;
+    });
   });
 
   const userId = new Types.ObjectId().toString();
@@ -58,13 +67,6 @@ describe('WalletService', () => {
       return null;
     };
 
-  const getMock = async (id: string): Promise<Wallet> => {
-    if (id === userId) {
-      return wallet;
-    }
-    return null;
-  };
-
   describe('Increment wallet tests', () => {
     beforeEach(() => {
       jest
@@ -89,9 +91,7 @@ describe('WalletService', () => {
   });
 
   describe('Get wallet tests', () => {
-    beforeEach(() => {
-      jest.spyOn(walletDao, 'get').mockImplementationOnce(getMock);
-    });
+    beforeEach(() => {});
 
     it('should return wallet', async () => {
       expect(await service.get(userId)).toEqual(wallet);
@@ -104,9 +104,6 @@ describe('WalletService', () => {
 
   describe('Decrement balance tests', () => {
     const mock = updateMock('dec');
-    beforeEach(() => {
-      jest.spyOn(walletDao, 'get').mockImplementationOnce(getMock);
-    });
 
     it('should decrement wallet balance', async () => {
       jest.spyOn(walletDao, 'decrementBalance').mockImplementationOnce(mock);
@@ -134,6 +131,55 @@ describe('WalletService', () => {
 
       await expect(service.decrementBalance(userId, 5)).rejects.toThrow(
         VersionChangedError,
+      );
+    });
+  });
+
+  const reservMock = async (id: string) => {
+    return id === userId;
+  };
+
+  describe('Add reservation tests', () => {
+    beforeEach(() => {
+      jest
+        .spyOn(walletDao, 'addReservation')
+        .mockImplementationOnce(reservMock);
+    });
+
+    it('should return true', async () => {
+      expect(await service.addReservation(userId, '12345')).toBe(true);
+    });
+
+    it('should throw an error if the user has the max number of reservations', async () => {
+      wallet.reservations = [
+        { _id: '123213' },
+        { _id: '123213' },
+        { _id: '123213' },
+      ];
+
+      await expect(service.addReservation(userId, '12345')).rejects.toThrow(
+        MaxAmountOfReservationsError,
+      );
+    });
+  });
+
+  describe('Remove reservation tests', () => {
+    beforeEach(() => {
+      jest
+        .spyOn(walletDao, 'removeReservation')
+        .mockImplementationOnce(reservMock);
+    });
+
+    it('should return true', async () => {
+      const resId = new Types.ObjectId().toString();
+      wallet.reservations = [{ _id: resId }];
+
+      expect(await service.removeReservation(userId, resId)).toBe(true);
+    });
+
+    it('should throw an error if the user doesnt have the reservation', async () => {
+      await expect(service.removeReservation(userId, '12345')).rejects.toThrow(
+        ReservationNotFoundError,
       );
     });
   });

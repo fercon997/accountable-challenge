@@ -5,6 +5,10 @@ export interface IWalletService {
 
   get(userId: string, reservation?: boolean): Promise<Wallet>;
 
+  addReservation(userId: string, reservationId: string): Promise<boolean>;
+
+  removeReservation(userId: string, reservationId: string): Promise<boolean>;
+
   decrementBalance(userId: string, amount: number): Promise<Wallet>;
 }
 

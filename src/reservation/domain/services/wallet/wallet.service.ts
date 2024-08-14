@@ -5,6 +5,8 @@ import { IWalletDao } from '../../../data-access/persistence/dao/wallet-dao';
 import {
   WalletNotFoundError,
   InvalidBalanceError,
+  ReservationNotFoundError,
+  MaxAmountOfReservationsError,
 } from '../../../common/errors';
 import { IWalletService } from './wallet-service.interface';
 
@@ -62,5 +64,39 @@ export class WalletService implements IWalletService {
 
     this.logger.log(`Deducted amount from ${userId} balance`);
     return result;
+  }
+
+  async addReservation(
+    userId: string,
+    reservationId: string,
+  ): Promise<boolean> {
+    const wallet = await this.get(userId);
+
+    if (wallet.reservations.length >= 3) {
+      throw new MaxAmountOfReservationsError(this.logger, userId);
+    }
+
+    return await this.walletDao.addReservation(
+      userId,
+      reservationId,
+      wallet.version,
+    );
+  }
+
+  async removeReservation(
+    userId: string,
+    reservationId: string,
+  ): Promise<boolean> {
+    const wallet = await this.get(userId);
+
+    if (!wallet.reservations.find(({ _id }) => _id === reservationId)) {
+      throw new ReservationNotFoundError(this.logger, reservationId);
+    }
+
+    return await this.walletDao.removeReservation(
+      userId,
+      reservationId,
+      wallet.version,
+    );
   }
 }

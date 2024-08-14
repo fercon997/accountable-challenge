@@ -6,16 +6,16 @@ export type ReservationDocument = HydratedDocument<Reservation>;
 
 export enum ReservationStatus {
   pending = 'pending',
-
   reserved = 'reserved',
   late = 'late',
   bought = 'bought',
   returned = 'returned',
+  canceled = 'canceled',
 }
 
 @Schema({ autoIndex: true, versionKey: 'version' })
 export class Reservation extends Entity {
-  @Prop({ type: schema.Types.ObjectId, required: true })
+  @Prop({ required: true })
   bookId: string;
 
   @Prop({ type: schema.Types.ObjectId, required: true })
@@ -37,9 +37,9 @@ export class Reservation extends Entity {
   lateFees?: number;
 
   @Prop({
-    type: String,
     enum: ReservationStatus,
     default: ReservationStatus.pending,
+    index: true,
   })
   status?: ReservationStatus;
 
@@ -47,8 +47,8 @@ export class Reservation extends Entity {
 
   constructor(reservation: Reservation) {
     super(reservation);
-    this.bookId = reservation.bookId.toString();
-    this.userId = reservation.userId.toString();
+    this.bookId = reservation.bookId?.toString();
+    this.userId = reservation.userId?.toString();
     this.reservationDate = reservation.reservationDate;
     this.expectedReturnDate = reservation.expectedReturnDate;
     this.returnDate = reservation.returnDate;

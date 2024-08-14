@@ -2,3 +2,8 @@ export * from './invalid-quantity.error';
 export * from './book.inventory-not-found.error';
 export * from './wallet-not-found.error';
 export * from './invalid-balance.error';
+export * from './invalid-return-date.error';
+export * from './reservation-not-found.error';
+export * from './already-reserved.error';
+export * from './max-amount-of-reservations.error';
+export * from './invalid-reservation-status.error';

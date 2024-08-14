@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock } from '@golevelup/ts-jest';
 import { Types } from 'mongoose';
+import { VersionChangedError } from '@shared/errors';
+import { IBookService } from '@book/domain/services/book/book-service.interface';
 import { IBookInventoryDao } from '../../../data-access/persistence/dao/book-inventory-dao';
 import { BookInventory } from '../../../common/entities';
 import {
@@ -23,6 +25,7 @@ describe('BookInventoryService', () => {
           useValue: createMock(),
         },
         { provide: 'LoggerService', useValue: createMock() },
+        { provide: IBookService, useValue: createMock() },
       ],
     }).compile();
 
@@ -43,6 +46,7 @@ describe('BookInventoryService', () => {
     totalReserved: 0,
     createdAt,
     updatedAt,
+    version: 0,
   };
 
   const getMock =
@@ -66,6 +70,7 @@ describe('BookInventoryService', () => {
             totalReserved: 0,
             createdAt,
             updatedAt,
+            version: 0,
           });
         });
 
@@ -145,6 +150,98 @@ describe('BookInventoryService', () => {
     it('should throw an error when not found', async () => {
       await expect(service.delete('12312asds')).rejects.toThrow(
         BookInventoryNotFoundError,
+      );
+    });
+  });
+
+  const updateResMock =
+    (v: number, inv?: BookInventory) => async (id, quantity, version) => {
+      const bokInv = inv || bookInv;
+      if (id === bokInv.bookId && (!version || version === v)) {
+        return {
+          ...bokInv,
+          totalReserved: bokInv.totalReserved + quantity,
+        };
+      }
+      return null;
+    };
+
+  describe('Add reservation tests', () => {
+    it('should return updated bookInventory', async () => {
+      const expected = { ...bookInv, totalReserved: 3 };
+      jest.spyOn(bookInvDao, 'get').mockImplementationOnce(getMock(expected));
+      jest
+        .spyOn(bookInvDao, 'updateReserved')
+        .mockImplementationOnce(updateResMock(0, expected));
+
+      expect(await service.addReservation(bookId)).toEqual({
+        ...expected,
+        totalReserved: expected.totalReserved + 1,
+      });
+    });
+
+    it('should fail if cannot update', async () => {
+      jest
+        .spyOn(bookInvDao, 'get')
+        .mockImplementationOnce(
+          getMock({ ...bookInv, totalInventory: 4, totalReserved: 4 }),
+        );
+      await expect(service.addReservation(bookId)).rejects.toThrow(
+        InvalidQuantityError,
+      );
+    });
+
+    it('should fail if version mismatch', async () => {
+      jest
+        .spyOn(bookInvDao, 'get')
+        .mockImplementationOnce(getMock({ ...bookInv, version: 1 }));
+      jest
+        .spyOn(bookInvDao, 'updateReserved')
+        .mockImplementationOnce(updateResMock(2));
+
+      await expect(service.addReservation(bookId)).rejects.toThrow(
+        VersionChangedError,
+      );
+    });
+  });
+
+  describe('Release reservation tests', () => {
+    it('should return updated bookInventory', async () => {
+      const expected = { ...bookInv, totalReserved: 4 };
+      jest.spyOn(bookInvDao, 'get').mockImplementationOnce(getMock(expected));
+      jest
+        .spyOn(bookInvDao, 'updateReserved')
+        .mockImplementationOnce(updateResMock(0, expected));
+
+      expect(await service.releaseReservation(bookId)).toEqual({
+        ...expected,
+        totalReserved: expected.totalReserved - 1,
+      });
+    });
+
+    it('should fail if cannot update', async () => {
+      jest
+        .spyOn(bookInvDao, 'get')
+        .mockImplementationOnce(
+          getMock({ ...bookInv, totalInventory: 4, totalReserved: 0 }),
+        );
+      await expect(service.releaseReservation(bookId)).rejects.toThrow(
+        InvalidQuantityError,
+      );
+    });
+
+    it('should fail if version mismatch', async () => {
+      jest
+        .spyOn(bookInvDao, 'get')
+        .mockImplementationOnce(
+          getMock({ ...bookInv, totalReserved: 2, version: 1 }),
+        );
+      jest
+        .spyOn(bookInvDao, 'updateReserved')
+        .mockImplementationOnce(updateResMock(2));
+
+      await expect(service.releaseReservation(bookId)).rejects.toThrow(
+        VersionChangedError,
       );
     });
   });

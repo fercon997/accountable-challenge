@@ -22,14 +22,26 @@ export class BookInventory extends Entity {
   })
   totalInventory: number;
 
-  @Prop({ default: 0 })
+  @Prop({
+    default: 0,
+    /* istanbul ignore next */
+    validate(value: number): boolean {
+      if (this instanceof Query) {
+        return this.get('totalInventory') >= value;
+      }
+      return true;
+    },
+  })
   totalReserved: number;
+
+  version?: number;
 
   constructor(bookInventory: BookInventory) {
     super(bookInventory);
     this.bookId = bookInventory.bookId;
     this.totalInventory = bookInventory.totalInventory;
     this.totalReserved = bookInventory.totalReserved;
+    this.version = bookInventory.version;
   }
 }
 

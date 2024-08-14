@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SharedModule } from '@shared/shared.module';
 import { ReservationModule } from '@reservation/reservation.module';
@@ -12,14 +12,15 @@ import { BookService, IBookService } from './domain/services/book';
 
 @Module({
   imports: [
+    forwardRef(() => ReservationModule),
     MongooseModule.forFeature([{ name: Book.name, schema: BookSchema }]),
     SharedModule,
-    ReservationModule,
   ],
   providers: [
     { provide: IBookDao, useClass: BookDaoService },
     { provide: IBookService, useClass: BookService },
   ],
   controllers: [BookController],
+  exports: [IBookService],
 })
 export class BooksModule {}

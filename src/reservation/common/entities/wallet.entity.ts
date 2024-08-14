@@ -5,6 +5,8 @@ import { Reservation } from './reservation.entity';
 
 export type WalletDocument = HydratedDocument<Wallet>;
 
+export type WalletReservation = Reservation | Pick<Reservation, '_id'>;
+
 @Schema({ timestamps: true, versionKey: 'version' })
 export class Wallet extends Entity {
   @Prop({
@@ -28,7 +30,7 @@ export class Wallet extends Entity {
     type: [{ type: schema.Types.ObjectId, ref: 'Reservation' }],
     maxlength: 3,
   })
-  reservations?: Reservation[];
+  reservations?: WalletReservation[];
 
   version?: number;
 
