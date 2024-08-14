@@ -29,7 +29,7 @@ export class ResponsePaginated<T> extends BaseResponse {
   totalCount: number;
 }
 
-export class BaseController {
+export abstract class BaseController {
   protected ok<T>(response?: T): Response<T> {
     return {
       statusCode: 200,
