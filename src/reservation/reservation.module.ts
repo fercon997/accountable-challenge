@@ -49,6 +49,6 @@ import { IReservationService } from './domain/services/reservation/reservation-s
     { provide: IReservationService, useClass: ReservationService },
   ],
   exports: [IBookInventoryService],
-  controllers: [WalletController],
+  controllers: [WalletController, ReservationController],
 })
 export class ReservationModule {}
