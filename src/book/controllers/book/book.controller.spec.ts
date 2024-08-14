@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { createMock } from '@golevelup/ts-jest';
 import { Response, ResponsePaginated } from '@shared/base.controller';
 import { Genres } from '@shared/types';
+import { AuthGuard } from '@shared/guards';
 import { IBookService } from '../../domain/services/book';
 import { Book } from '../../common/entities';
 import {
@@ -21,7 +22,10 @@ describe('BookController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BookController],
       providers: [{ provide: IBookService, useValue: createMock() }],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue(createMock())
+      .compile();
 
     controller = module.get<BookController>(BookController);
     bookService = module.get<IBookService>(IBookService);

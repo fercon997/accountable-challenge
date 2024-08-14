@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock } from '@golevelup/ts-jest';
 import { ResponsePaginated } from '@shared/base.controller';
+import { UsersModule } from '@user/users.module';
+import { SharedModule } from '@shared/shared.module';
+import { AuthGuard } from '@shared/guards';
 import { IReservationService } from '../../domain/services/reservation/reservation-service.interface';
 import { ReservationDto } from '../../domain/dto';
 import { Reservation, ReservationStatus } from '../../common/entities';
@@ -36,7 +39,10 @@ describe('ReservationController', () => {
           useValue: createMock<IReservationService>(),
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue(createMock())
+      .compile();
 
     controller = module.get<ReservationController>(ReservationController);
     service = module.get<IReservationService>(IReservationService);
@@ -92,11 +98,13 @@ describe('ReservationController', () => {
         });
 
       expect(
-        await controller.createReservation({
+        await controller.createReservation(
+          {
+            bookId,
+            expectedReturnDate: date,
+          },
           userId,
-          bookId,
-          expectedReturnDate: date,
-        }),
+        ),
       ).toEqual({
         data: expected,
         statusCode: 200,

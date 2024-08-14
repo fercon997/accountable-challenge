@@ -13,9 +13,15 @@ import {
   Response,
   ResponsePaginated,
 } from '@shared/base.controller';
-import { ApiOkResponse, ApiOkResponsePaginated } from '@shared/decorators';
+import {
+  ApiOkResponse,
+  ApiOkResponsePaginated,
+  Auth,
+  User,
+} from '@shared/decorators';
 import { ApiTags } from '@nestjs/swagger';
 import { PaginationDto } from '@shared/dto';
+import { TokenUser } from '@shared/types';
 import { IReservationService } from '../../domain/services/reservation/reservation-service.interface';
 import { CreateReservationDto, ReservationDto } from '../../domain/dto';
 import { mapReservationToDto } from '../../domain/mappers';
@@ -32,6 +38,7 @@ export class ReservationController extends BaseController {
   }
 
   @Get('history')
+  @Auth()
   @ApiOkResponsePaginated(ReservationDto)
   async getReservationsHistory(
     @Query() options: PaginationDto,
@@ -45,9 +52,11 @@ export class ReservationController extends BaseController {
   }
 
   @ApiOkResponse(ReservationDto)
+  @Auth()
   @Post()
   async createReservation(
-    @Body() { userId, bookId, expectedReturnDate }: CreateReservationDto,
+    @Body() { bookId, expectedReturnDate }: CreateReservationDto,
+    @User('id') userId: string,
   ): Promise<Response<ReservationDto>> {
     const result = await this.reservationService.createReservation(
       userId,
@@ -59,9 +68,10 @@ export class ReservationController extends BaseController {
   }
 
   @ApiOkResponse(ReservationDto)
-  @Patch(':id/pay/:userId')
+  @Auth()
+  @Patch(':id/pay')
   async payReservation(
-    @Param('userId') userId: string,
+    @User('id') userId: string,
     @Param('id') id: string,
   ): Promise<Response<Reservation>> {
     const result = await this.reservationService.payReservation(id, userId);
@@ -70,9 +80,10 @@ export class ReservationController extends BaseController {
   }
 
   @ApiOkResponse(ReservationDto)
-  @Patch(':id/cancel/:userId')
+  @Auth()
+  @Patch(':id/cancel')
   async cancelReservation(
-    @Param('userId') userId: string,
+    @User('id') userId: string,
     @Param('id') id: string,
   ): Promise<Response<Reservation>> {
     const result = await this.reservationService.cancelReservation(id, userId);
@@ -81,9 +92,10 @@ export class ReservationController extends BaseController {
   }
 
   @ApiOkResponse(ReservationDto)
-  @Patch(':id/end/:userId')
+  @Auth()
+  @Patch(':id/end')
   async endReservation(
-    @Param('userId') userId: string,
+    @User('id') userId: string,
     @Param('id') id: string,
   ): Promise<Response<Reservation>> {
     const result = await this.reservationService.endReservation(id, userId);

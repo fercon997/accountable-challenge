@@ -14,10 +14,6 @@ export class CreateReservationDto {
   bookId: string;
 
   @ApiProperty()
-  @IsString()
-  userId: string;
-
-  @ApiProperty()
   @IsDateString()
   expectedReturnDate: Date;
 }
@@ -26,6 +22,10 @@ export class ReservationDto extends CreateReservationDto {
   @ApiProperty()
   @IsString()
   id: string;
+
+  @ApiProperty()
+  @IsString()
+  userId: string;
 
   @ApiProperty()
   @IsNumber()

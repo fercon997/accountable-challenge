@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ReservationModule } from '@reservation/reservation.module';
-import { UserModule } from '@user/user.module';
+import { UsersModule } from '@user/users.module';
 import { BooksModule } from '@book/books.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RouterModule } from '@nestjs/core';
@@ -14,12 +14,12 @@ import { RouterModule } from '@nestjs/core';
       { path: 'book', module: BooksModule },
       {
         path: 'user',
-        module: UserModule,
+        module: UsersModule,
       },
       { path: 'reservation', module: ReservationModule },
     ]),
     ReservationModule,
-    UserModule,
+    UsersModule,
     BooksModule,
   ],
 })

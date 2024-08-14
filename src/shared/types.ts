@@ -39,3 +39,13 @@ export type PaginationOptions = {
   pageSize: number;
   page: number;
 };
+
+export type TokenUser = {
+  id: string;
+  email: string;
+  iat?: number;
+  role: {
+    name: string;
+    permissions: string[];
+  };
+};

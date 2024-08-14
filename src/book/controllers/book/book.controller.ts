@@ -15,7 +15,12 @@ import {
   Response,
   ResponsePaginated,
 } from '@shared/base.controller';
-import { ApiOkResponse, ApiOkResponsePaginated } from '@shared/decorators';
+import {
+  ApiOkResponse,
+  ApiOkResponsePaginated,
+  Auth,
+} from '@shared/decorators';
+import { PermissionMap } from '@shared/types';
 import { IBookService } from '../../domain/services/book';
 import {
   mapBookArrayToDto,
@@ -38,6 +43,7 @@ export class BookController extends BaseController {
   }
 
   @Get('/search')
+  @Auth(PermissionMap.allBooks, PermissionMap.getBook)
   @ApiOkResponsePaginated(ResponseBookDto)
   async search(
     @Query() options: PaginationBookDto,
@@ -56,6 +62,7 @@ export class BookController extends BaseController {
 
   @Get(':id')
   @ApiOkResponse(ResponseBookDto)
+  @Auth(PermissionMap.allBooks, PermissionMap.getBook)
   async getBook(@Param('id') id: string): Promise<Response<BookDto>> {
     const book = await this.bookService.getById(id);
     return this.ok(mapBookToDto(book));
@@ -63,6 +70,7 @@ export class BookController extends BaseController {
 
   @Post()
   @ApiOkResponse(ResponseBookDto)
+  @Auth(PermissionMap.allBooks, PermissionMap.createBook)
   async create(@Body() bookDto: CreateBookDto): Promise<Response<BookDto>> {
     const book = await this.bookService.create(
       mapDtoToBook(bookDto),
@@ -73,6 +81,7 @@ export class BookController extends BaseController {
 
   @Patch(':id')
   @ApiOkResponse(ResponseBookDto)
+  @Auth(PermissionMap.allBooks, PermissionMap.updateBook)
   async update(
     @Param('id') id: string,
     @Body() bookDto: UpdateBookDto,
@@ -82,6 +91,7 @@ export class BookController extends BaseController {
   }
 
   @Delete(':id')
+  @Auth(PermissionMap.allBooks, PermissionMap.deleteBook)
   async delete(@Param('id') id: string): Promise<Response<void>> {
     await this.bookService.delete(id);
     return this.ok();

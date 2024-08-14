@@ -13,6 +13,7 @@ async function bootstrap() {
     .setTitle('Accountable library challenge')
     .setDescription('Challenge for accountable API')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

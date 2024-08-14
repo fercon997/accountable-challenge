@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SharedModule } from '@shared/shared.module';
 import { BooksModule } from '@book/books.module';
+import { UsersModule } from '@user/users.module';
 import {
   BookInventory,
   BookInventorySchema,
@@ -39,6 +40,7 @@ import { IReservationService } from './domain/services/reservation/reservation-s
     ]),
     SharedModule,
     forwardRef(() => BooksModule),
+    UsersModule,
   ],
   providers: [
     { provide: IBookInventoryDao, useClass: BookInventoryDaoService },

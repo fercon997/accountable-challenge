@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Types } from 'mongoose';
 import { Response } from '@shared/base.controller';
 import { createMock } from '@golevelup/ts-jest';
+import { AuthGuard } from '@shared/guards';
 import { IWalletService } from '../../domain/services/wallet';
 import { Reservation, ReservationStatus, Wallet } from '../../common/entities';
 import { ReservationDto, WalletDto } from '../../domain/dto';
@@ -15,7 +16,10 @@ describe('WalletController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WalletController],
       providers: [{ provide: IWalletService, useValue: createMock() }],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue(createMock())
+      .compile();
 
     controller = module.get<WalletController>(WalletController);
     walletService = module.get<IWalletService>(IWalletService);
