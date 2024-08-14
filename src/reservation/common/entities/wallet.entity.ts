@@ -44,6 +44,7 @@ export class Wallet extends Entity {
 export const WalletSchema = SchemaFactory.createForClass(Wallet);
 /* istanbul ignore next */
 WalletSchema.pre('findOneAndUpdate', function (next) {
+  this.findOneAndUpdate({}, { $inc: { version: 1 } });
   this.setOptions({ runValidators: true });
   next();
 });

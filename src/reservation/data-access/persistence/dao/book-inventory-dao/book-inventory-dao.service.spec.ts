@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { createMock } from '@golevelup/ts-jest';
 import { FilterQuery, Model, Query, Types, UpdateQuery } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
+import { ITransactionService } from '@shared/services/transaction';
 import {
   BookInventory,
   BookInventoryDocument,
@@ -23,6 +24,7 @@ describe('BookInventoryDaoService', () => {
           useValue: createMock<Model<BookInventory>>(),
         },
         { provide: 'LoggerService', useValue: createMock() },
+        { provide: ITransactionService, useValue: createMock() },
       ],
     }).compile();
 
@@ -45,6 +47,7 @@ describe('BookInventoryDaoService', () => {
     totalReserved: 0,
     createdAt,
     updatedAt,
+    version: 0,
   };
 
   const bookInvDoc: BookInventoryDocument = {
@@ -65,6 +68,7 @@ describe('BookInventoryDaoService', () => {
             totalReserved: 0,
             createdAt: createdAt.toISOString(),
             updatedAt: updatedAt.toISOString(),
+            version: 0,
           } as unknown as Query<any, any>;
         });
 
@@ -181,44 +185,100 @@ describe('BookInventoryDaoService', () => {
         PersistenceError,
       );
     });
+  });
 
-    describe('Delete book inventory tests', () => {
-      const deleteMock = ({ bookId: id }: FilterQuery<BookInventory>) => {
-        let count = 0;
-        if (id === bookId) {
-          count++;
-        }
+  describe('Delete book inventory tests', () => {
+    const deleteMock = ({ bookId: id }: FilterQuery<BookInventory>) => {
+      let count = 0;
+      if (id === bookId) {
+        count++;
+      }
+      return {
+        deletedCount: count,
+        acknowledged: true,
+      } as unknown as Query<any, any>;
+    };
+
+    it('should return true when deleted', async () => {
+      jest.spyOn(bookInvModel, 'deleteOne').mockImplementationOnce(deleteMock);
+
+      expect(await service.delete(bookId)).toBe(true);
+    });
+
+    it('should return false when not found', async () => {
+      jest.spyOn(bookInvModel, 'deleteOne').mockImplementationOnce(deleteMock);
+
+      expect(await service.delete('11asdas')).toBe(false);
+    });
+
+    it('should throw an error if something goes wrong', async () => {
+      jest.spyOn(bookInvModel, 'deleteOne').mockImplementationOnce(() => {
+        throw new Error('could not delete');
+      });
+
+      await expect(service.delete('a112312')).rejects.toThrow(PersistenceError);
+    });
+  });
+
+  describe('Update reserved tests', () => {
+    const updateMock = (
+      { bookId: id, version },
+      { $inc: { totalReserved } },
+    ) => {
+      if (id === bookId && (!version || version === bookInvDoc.version)) {
         return {
-          deletedCount: count,
-          acknowledged: true,
+          ...bookInvDoc,
+          totalReserved: bookInvDoc.totalReserved + totalReserved,
         } as unknown as Query<any, any>;
-      };
+      }
+    };
 
-      it('should return true when deleted', async () => {
-        jest
-          .spyOn(bookInvModel, 'deleteOne')
-          .mockImplementationOnce(deleteMock);
+    it('should return updated inventory', async () => {
+      jest
+        .spyOn(bookInvModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateMock);
 
-        expect(await service.delete(bookId)).toBe(true);
+      const quantity = 1;
+
+      const result = await service.updateReserved(
+        bookId,
+        quantity,
+        bookInv.version,
+      );
+
+      expect(result).toEqual({
+        ...bookInv,
+        totalReserved: bookInv.totalReserved + quantity,
       });
+      expect(result).toBeInstanceOf(BookInventory);
+    });
 
-      it('should return false when not found', async () => {
-        jest
-          .spyOn(bookInvModel, 'deleteOne')
-          .mockImplementationOnce(deleteMock);
+    it('should return null when not found', async () => {
+      jest
+        .spyOn(bookInvModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateMock);
 
-        expect(await service.delete('11asdas')).toBe(false);
-      });
+      expect(await service.updateReserved('123', 1)).toBeNull();
+    });
 
-      it('should throw an error if something goes wrong', async () => {
-        jest.spyOn(bookInvModel, 'deleteOne').mockImplementationOnce(() => {
-          throw new Error('could not delete');
+    it('should return null when version mismatch', async () => {
+      jest
+        .spyOn(bookInvModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateMock);
+
+      expect(await service.updateReserved(bookId, 1, 3)).toBeNull();
+    });
+
+    it('should throw an error if something goes wrong', async () => {
+      jest
+        .spyOn(bookInvModel, 'findOneAndUpdate')
+        .mockImplementationOnce(() => {
+          throw new Error('could not update');
         });
 
-        await expect(service.delete('a112312')).rejects.toThrow(
-          PersistenceError,
-        );
-      });
+      await expect(
+        service.updateReserved(bookId, 1, bookInv.version),
+      ).rejects.toThrow(PersistenceError);
     });
   });
 });

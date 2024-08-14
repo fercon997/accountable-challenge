@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { createMock } from '@golevelup/ts-jest';
-import { FilterQuery, Model, Query, Types } from 'mongoose';
+import { FilterQuery, Model, Query, Types, UpdateQuery } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
+import { ITransactionService } from '@shared/services/transaction';
 import {
   Reservation,
   ReservationDocument,
@@ -26,6 +27,7 @@ describe('WalletDaoService', () => {
           useValue: createMock(),
         },
         { provide: 'LoggerService', useValue: createMock() },
+        { provide: ITransactionService, useValue: createMock() },
       ],
     }).compile();
 
@@ -45,19 +47,20 @@ describe('WalletDaoService', () => {
   };
   const walletRes: Wallet = {
     ...wallet,
+    reservations: [{ _id: _id.toString() }],
     _id: _id.toString(),
     createdAt,
     updatedAt,
   };
 
-  const reservation: Reservation = {
+  const reservation: Reservation = new Reservation({
     bookId: 'adasd',
     userId: userId.toString(),
     price: 25,
     reservationDate: new Date(),
     expectedReturnDate: new Date(),
     status: ReservationStatus.reserved,
-  };
+  });
 
   const reservationRes: Reservation = {
     ...reservation,
@@ -129,6 +132,7 @@ describe('WalletDaoService', () => {
     if (wallet) {
       return {
         ...wallet,
+        reservations: [_id],
         populate() {
           this.reservations = [genResDoc(reservation)];
         },
@@ -148,6 +152,7 @@ describe('WalletDaoService', () => {
         await service.incrementBalance(userId.toString(), balance),
       ).toEqual({
         ...walletRes,
+        reservations: [],
         balance: expectedBalance,
       });
     });
@@ -244,6 +249,113 @@ describe('WalletDaoService', () => {
       });
 
       await expect(service.decrementBalance('12324', 35)).rejects.toThrow(
+        PersistenceError,
+      );
+    });
+  });
+
+  const updateResMock = (
+    { userId: id, version }: FilterQuery<Wallet>,
+    update: UpdateQuery<Wallet>,
+  ) => {
+    const push = update.$push?.reservations;
+    const pull = update.$pull?.reservations;
+    if (
+      id === userId.toString() &&
+      (version === undefined || version === wallet.version)
+    ) {
+      const doc = getMock({ userId: id }) as unknown as WalletDocument;
+      if (push) {
+        doc.reservations = [push];
+      }
+
+      if (pull) {
+        doc.reservations = [];
+      }
+
+      return doc as unknown as Query<any, any>;
+    }
+  };
+
+  describe('Add reservation tests', () => {
+    it('should add reservation and return true', async () => {
+      jest
+        .spyOn(walletModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateResMock);
+
+      expect(
+        await service.addReservation(userId.toString(), reservationRes._id),
+      ).toBe(true);
+    });
+
+    it('should return false if not found', async () => {
+      jest
+        .spyOn(walletModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateResMock);
+      expect(await service.addReservation('1232143', reservationRes._id)).toBe(
+        false,
+      );
+    });
+
+    it('should return false if version not found', async () => {
+      jest
+        .spyOn(walletModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateResMock);
+      expect(
+        await service.addReservation(userId.toString(), reservationRes._id, 1),
+      ).toBe(false);
+    });
+
+    it('should throw an error if something goes wrong', async () => {
+      jest.spyOn(walletModel, 'findOneAndUpdate').mockImplementationOnce(() => {
+        throw new Error('could not update');
+      });
+
+      await expect(service.addReservation('13213', '12134')).rejects.toThrow(
+        PersistenceError,
+      );
+    });
+  });
+
+  describe('Remove reservation tests', () => {
+    it('should remove reservation and return true', async () => {
+      jest
+        .spyOn(walletModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateResMock);
+
+      expect(
+        await service.removeReservation(userId.toString(), reservationRes._id),
+      ).toBe(true);
+    });
+
+    it('should return false if not found', async () => {
+      jest
+        .spyOn(walletModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateResMock);
+      expect(
+        await service.removeReservation('1232143', reservationRes._id),
+      ).toBe(false);
+    });
+
+    it('should return false if version not found', async () => {
+      jest
+        .spyOn(walletModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateResMock);
+      expect(
+        await service.removeReservation(
+          userId.toString(),
+          reservationRes._id,
+          1,
+        ),
+      ).toBe(false);
+    });
+
+    it('should throw an error if something goes wrong', async () => {
+      jest.spyOn(walletModel, 'findOneAndUpdate').mockImplementationOnce(() => {
+        throw new Error('could not update');
+      });
+
+      await expect(service.removeReservation('13213', '12134')).rejects.toThrow(
         PersistenceError,
       );
     });

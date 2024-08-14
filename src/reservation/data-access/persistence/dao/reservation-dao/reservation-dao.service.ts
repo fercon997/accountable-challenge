@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, FilterQuery, Model } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
 import { ITransactionService } from '@shared/services/transaction';
+import { DbPaginationOptions, DbPaginationResult } from '@shared/types';
 import { Reservation, ReservationDocument } from '../../../../common/entities';
 import { IReservationDao } from './reservation-dao.interface';
 
@@ -17,13 +18,13 @@ export class ReservationDaoService implements IReservationDao {
 
   async create(reservation: Reservation): Promise<Reservation> {
     try {
-      const result: ReservationDocument = (await this.model.create(
-        reservation,
+      const result: ReservationDocument[] = await this.model.create(
+        [reservation],
         {
           session: this.transactionService.getCurrentTransaction(),
         },
-      )) as unknown as ReservationDocument;
-      return this.parseDbDocument(result);
+      );
+      return this.parseDbDocument(result[0]);
     } catch (error) {
       throw new PersistenceError(
         this.logger,
@@ -33,10 +34,35 @@ export class ReservationDaoService implements IReservationDao {
     }
   }
 
-  async get(input: { userId: string; bookId: string }): Promise<Reservation[]> {
+  get(
+    input: Partial<Reservation>,
+    paginationOptions: DbPaginationOptions,
+  ): Promise<DbPaginationResult<Reservation>>;
+  get(input: Partial<Reservation>): Promise<Reservation[]>;
+  async get(
+    input: Partial<Reservation>,
+    paginationOptions?: DbPaginationOptions,
+  ): Promise<Reservation[] | DbPaginationResult<Reservation>> {
     try {
-      const result: ReservationDocument[] = await this.model.find(input);
-      return result.map(this.parseDbDocument);
+      const filters: FilterQuery<Reservation> = {};
+      for (const key in input) {
+        if (input[key] === null) {
+          filters[key] = { $exists: false };
+        } else if (input[key] !== undefined) {
+          filters[key] = input[key];
+        }
+      }
+      const query = this.model.find(filters);
+
+      if (paginationOptions) {
+        query.limit(paginationOptions.limit).skip(paginationOptions.offset);
+        return {
+          data: (await query.exec()).map(this.parseDbDocument),
+          totalCount: await this.model.find(filters).countDocuments(),
+        };
+      }
+
+      return (await query).map(this.parseDbDocument);
     } catch (error) {
       throw new PersistenceError(
         this.logger,
@@ -71,7 +97,10 @@ export class ReservationDaoService implements IReservationDao {
       const result: ReservationDocument = await this.model.findOneAndUpdate(
         query,
         update,
-        { session: this.transactionService.getCurrentTransaction() },
+        {
+          returnOriginal: false,
+          session: this.transactionService.getCurrentTransaction(),
+        },
       );
 
       return this.parseDbDocument(result);

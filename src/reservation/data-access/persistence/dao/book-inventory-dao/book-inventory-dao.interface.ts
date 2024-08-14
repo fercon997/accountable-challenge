@@ -8,6 +8,12 @@ export interface IBookInventoryDao {
   update(bookId: string, quantity: number): Promise<BookInventory>;
 
   delete(bookId: string): Promise<boolean>;
+
+  updateReserved(
+    bookId: string,
+    quantity: number,
+    version?: number,
+  ): Promise<BookInventory>;
 }
 
 export const IBookInventoryDao = Symbol('IBookInventoryDao');

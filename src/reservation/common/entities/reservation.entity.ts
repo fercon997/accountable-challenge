@@ -60,4 +60,9 @@ export class Reservation extends Entity {
 }
 
 export const ReservationSchema = SchemaFactory.createForClass(Reservation);
-ReservationSchema.index({ userId: 1, bookId: 1 }, { unique: true });
+ReservationSchema.index({ bookId: 1, userId: 1 }, { unique: true });
+/* istanbul ignore next */
+ReservationSchema.pre('findOneAndUpdate', function (next) {
+  this.findOneAndUpdate({}, { $inc: { version: 1 } });
+  next();
+});

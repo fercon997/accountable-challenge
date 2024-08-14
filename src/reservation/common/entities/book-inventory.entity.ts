@@ -36,6 +36,7 @@ export class BookInventory extends Entity {
 export const BookInventorySchema = SchemaFactory.createForClass(BookInventory);
 /* istanbul ignore next */
 BookInventorySchema.pre('findOneAndUpdate', function (next) {
+  this.findOneAndUpdate({}, { $inc: { version: 1 } });
   this.setOptions({ runValidators: true });
   next();
 });

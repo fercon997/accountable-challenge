@@ -1,3 +1,4 @@
+import { DbPaginationOptions, DbPaginationResult } from '@shared/types';
 import { Reservation } from '../../../../common/entities';
 
 export interface IReservationDao {
@@ -9,11 +10,12 @@ export interface IReservationDao {
     version?: number,
   ): Promise<Reservation>;
 
-  get(input: { userId: string; bookId: string }): Promise<Reservation[]>;
+  get(
+    input: Partial<Reservation>,
+    paginationOptions: DbPaginationOptions,
+  ): Promise<DbPaginationResult<Reservation>>;
 
-  get(input: { userId: string }): Promise<Reservation[]>;
-
-  get(input: { bookId: string }): Promise<Reservation[]>;
+  get(input: Partial<Reservation>): Promise<Reservation[]>;
 
   getById(id: string): Promise<Reservation>;
 }

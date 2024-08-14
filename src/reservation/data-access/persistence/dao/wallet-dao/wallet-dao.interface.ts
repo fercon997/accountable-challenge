@@ -10,6 +10,18 @@ export interface IWalletDao {
   ): Promise<Wallet>;
 
   get(userId: string, reservations?: boolean): Promise<Wallet>;
+
+  addReservation(
+    userId: string,
+    reservationId: string,
+    version?: number,
+  ): Promise<boolean>;
+
+  removeReservation(
+    userId: string,
+    reservationId: string,
+    version?: number,
+  ): Promise<boolean>;
 }
 
 export const IWalletDao = Symbol('IWalletDao');

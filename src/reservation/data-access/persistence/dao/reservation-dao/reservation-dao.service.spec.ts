@@ -57,11 +57,14 @@ describe('ReservationDaoService', () => {
     version: 0,
   };
 
-  const parseDocument = (reservation: Reservation): ReservationDocument => {
+  const parseDocument = (
+    reservation: Reservation,
+    id?: string,
+  ): ReservationDocument => {
     const res = {
       status: ReservationStatus.pending,
       ...reservation,
-      _id,
+      _id: id || _id,
       userId,
       bookId,
       createdAt: createdAt.toISOString(),
@@ -76,8 +79,8 @@ describe('ReservationDaoService', () => {
   };
 
   describe('Create reservation tests', () => {
-    const createMock = (document: Reservation): Query<any, any> => {
-      return parseDocument(document) as unknown as Query<any, any>;
+    const createMock = (document: Reservation[]): Query<any, any> => {
+      return [parseDocument(document[0])] as unknown as Query<any, any>;
     };
 
     it('should create reservation', async () => {
@@ -136,29 +139,46 @@ describe('ReservationDaoService', () => {
   describe('Get reservation tests', () => {
     const getMock = (params?: FilterQuery<Reservation>): Query<any, any> => {
       const { userId: usrId, bookId: bokId } = params;
+      const $exists = params?.returnDate?.$exists;
       const documents = [parseDocument(reservation)] as unknown as Query<
         any,
         any
       >;
-      if (usrId && bokId && usrId === userId.toString() && bokId === bookId) {
+      const existsCondition =
+        $exists === false ? !documents[0].returnDate : true;
+      if (
+        usrId &&
+        bokId &&
+        usrId === userId.toString() &&
+        bokId === bookId &&
+        existsCondition
+      ) {
         return documents;
       }
 
-      if (usrId && usrId === userId.toString()) {
+      if (usrId && usrId === userId.toString() && existsCondition) {
         return documents;
       }
 
-      if (bokId && bokId === bookId) {
+      if (bokId && bokId === bookId && existsCondition) {
+        return documents;
+      }
+
+      if ($exists === false) {
         return documents;
       }
 
       return [] as unknown as Query<any, any>;
     };
 
-    const testLogic = async (userId?: string, bookId?: string) => {
+    const testLogic = async (
+      userId?: string,
+      bookId?: string,
+      returnDate?: Date,
+    ) => {
       jest.spyOn(reservModel, 'find').mockImplementationOnce(getMock);
 
-      const result = await service.get({ userId, bookId });
+      const result = await service.get({ userId, bookId, returnDate });
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual(reservationRes);
       expect(result[0]).toBeInstanceOf(Reservation);
@@ -173,7 +193,11 @@ describe('ReservationDaoService', () => {
     });
 
     it('should return an array of documents if found by the two conditions', async () => {
-      await testLogic(null, bookId);
+      await testLogic(undefined, bookId);
+    });
+
+    it('should return an array if found by null condition', async () => {
+      await testLogic(undefined, undefined, null);
     });
 
     it('should return an empty array if none found', async () => {
@@ -190,6 +214,61 @@ describe('ReservationDaoService', () => {
       await expect(service.get({ userId: '123asda' })).rejects.toThrow(
         PersistenceError,
       );
+    });
+  });
+
+  describe('Get with pagination tests', () => {
+    const getMock = (reservations: Reservation[]) => () => {
+      return {
+        size: reservations.length,
+        offset: 0,
+        limit(limit: number) {
+          this.size = limit;
+          return this;
+        },
+        skip(offset: number) {
+          this.offset = offset;
+          return this;
+        },
+        countDocuments() {
+          return reservations.length;
+        },
+        exec() {
+          const result = [];
+          for (
+            let i = this.offset, count = 0;
+            i < reservations.length;
+            i++, count++
+          ) {
+            if (count === this.size) {
+              break;
+            }
+            result.push(parseDocument(reservations[i], reservations[i]._id));
+          }
+          return result;
+        },
+      } as unknown as Query<any, any>;
+    };
+
+    it('should return an array of reservations with pagination', async () => {
+      const id = new Types.ObjectId().toString();
+      jest
+        .spyOn(reservModel, 'find')
+        .mockImplementation(
+          getMock([reservationRes, { ...reservationRes, _id: id }]),
+        );
+
+      const result = await service.get({}, { limit: 1, offset: 1 });
+      expect(result.totalCount).toBe(2);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]._id).toBe(id);
+    });
+
+    it('should return none if not found', async () => {
+      jest.spyOn(reservModel, 'find').mockImplementation(getMock([]));
+      const result = await service.get({}, { limit: 10, offset: 0 });
+      expect(result.totalCount).toBe(0);
+      expect(result.data).toHaveLength(0);
     });
   });
 

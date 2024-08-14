@@ -1,32 +1,126 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model } from 'mongoose';
+import {
+  ClientSession,
+  FilterQuery,
+  Model,
+  Types,
+  UpdateQuery,
+} from 'mongoose';
 import { PersistenceError } from '@shared/errors';
+import { ITransactionService } from '@shared/services/transaction';
+import { DaoService } from '@shared/dao.service';
 import {
   Reservation,
   ReservationDocument,
   Wallet,
   WalletDocument,
+  WalletReservation,
 } from '../../../../common/entities';
 import { IWalletDao } from './wallet-dao.interface';
 
 @Injectable()
-export class WalletDaoService implements IWalletDao {
+export class WalletDaoService extends DaoService implements IWalletDao {
   constructor(
     @InjectModel(Wallet.name) private walletModel: Model<Wallet>,
-    @Inject('LoggerService') private logger: LoggerService,
-  ) {}
+    @Inject('LoggerService') logger: LoggerService,
+    @Inject(ITransactionService)
+    private transactionService: ITransactionService<ClientSession>,
+  ) {
+    super(logger);
+  }
 
-  decrementBalance(
+  private parseDbWallet(walletDoc: WalletDocument): Wallet {
+    return walletDoc
+      ? new Wallet({
+          ...walletDoc.toJSON(),
+          balance: parseFloat(walletDoc.balance.toString()),
+          reservations: walletDoc.reservations.map(this.parseReservation),
+        })
+      : null;
+  }
+
+  private parseReservation(
+    reservationDoc: ReservationDocument,
+  ): WalletReservation {
+    if (reservationDoc instanceof Types.ObjectId) {
+      return { _id: reservationDoc.toString() };
+    }
+
+    return new Reservation({
+      ...reservationDoc.toJSON(),
+      price: parseFloat(reservationDoc.price.toString()),
+    });
+  }
+
+  private async updateBalance(
+    userId: string,
+    balance: number,
+    version?: number,
+  ): Promise<Wallet> {
+    try {
+      const query: FilterQuery<Wallet> = version
+        ? { userId, version }
+        : { userId };
+
+      const result = await this.walletModel.findOneAndUpdate(
+        query,
+        {
+          $inc: { balance: balance },
+        },
+        {
+          returnOriginal: false,
+          session: this.transactionService.getCurrentTransaction(),
+        },
+      );
+      return this.parseDbWallet(result);
+    } catch (error) {
+      throw new PersistenceError(
+        this.logger,
+        `Could not update ${userId} wallet by ${balance}`,
+        error,
+      );
+    }
+  }
+
+  private async updateReservations(
+    userId: string,
+    reservationId: string,
+    operation: 'push' | 'pull',
+    version?: number,
+  ): Promise<boolean> {
+    try {
+      const query: FilterQuery<Wallet> = version
+        ? { userId, version }
+        : { userId };
+      const update: UpdateQuery<Wallet> = {};
+      if (operation === 'push') {
+        update.$push = { reservations: reservationId };
+      }
+
+      if (operation === 'pull') {
+        update.$pull = { reservations: reservationId };
+      }
+
+      const result = await this.walletModel.findOneAndUpdate(query, update, {
+        session: this.transactionService.getCurrentTransaction(),
+      });
+      return !!result;
+    } catch (e) {
+      this.throwError('Could not update wallet with reservations', e);
+    }
+  }
+
+  async incrementBalance(userId: string, balance: number): Promise<Wallet> {
+    return this.updateBalance(userId, balance);
+  }
+
+  async decrementBalance(
     userId: string,
     balance: number,
     version?: number,
   ): Promise<Wallet> {
     return this.updateBalance(userId, -balance, version);
-  }
-
-  incrementBalance(userId: string, balance: number): Promise<Wallet> {
-    return this.updateBalance(userId, balance);
   }
 
   async get(userId: string, reservations = false): Promise<Wallet> {
@@ -48,43 +142,19 @@ export class WalletDaoService implements IWalletDao {
     }
   }
 
-  private async updateBalance(
+  async addReservation(
     userId: string,
-    balance: number,
+    reservationId: string,
     version?: number,
-  ): Promise<Wallet> {
-    try {
-      const query: FilterQuery<Wallet> = version
-        ? { userId, version }
-        : { userId };
-
-      const result = await this.walletModel.findOneAndUpdate(query, {
-        $inc: { balance: balance },
-      });
-      return this.parseDbWallet(result);
-    } catch (error) {
-      throw new PersistenceError(
-        this.logger,
-        `Could not update ${userId} wallet by ${balance}`,
-        error,
-      );
-    }
+  ): Promise<boolean> {
+    return this.updateReservations(userId, reservationId, 'push', version);
   }
 
-  private parseDbWallet(walletDoc: WalletDocument): Wallet {
-    return walletDoc
-      ? new Wallet({
-          ...walletDoc.toJSON(),
-          balance: parseFloat(walletDoc.balance.toString()),
-          reservations: walletDoc.reservations.map(this.parseReservation),
-        })
-      : null;
-  }
-
-  private parseReservation(reservationDoc: ReservationDocument): Reservation {
-    return new Reservation({
-      ...reservationDoc.toJSON(),
-      price: parseFloat(reservationDoc.price.toString()),
-    });
+  async removeReservation(
+    userId: string,
+    reservationId: string,
+    version?: number,
+  ): Promise<boolean> {
+    return this.updateReservations(userId, reservationId, 'pull', version);
   }
 }
