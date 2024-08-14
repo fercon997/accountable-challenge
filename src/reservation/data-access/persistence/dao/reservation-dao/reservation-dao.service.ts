@@ -1,20 +1,34 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, FilterQuery, Model } from 'mongoose';
-import { PersistenceError } from '@shared/errors';
 import { ITransactionService } from '@shared/services/transaction';
+import { DaoService } from '@shared/dao.service';
 import { DbPaginationOptions, DbPaginationResult } from '@shared/types';
 import { Reservation, ReservationDocument } from '../../../../common/entities';
 import { IReservationDao } from './reservation-dao.interface';
 
 @Injectable()
-export class ReservationDaoService implements IReservationDao {
+export class ReservationDaoService
+  extends DaoService
+  implements IReservationDao
+{
   constructor(
     @InjectModel(Reservation.name) private model: Model<Reservation>,
-    @Inject('LoggerService') private logger: LoggerService,
+    @Inject('LoggerService') logger: LoggerService,
     @Inject(ITransactionService)
     private transactionService: ITransactionService<ClientSession>,
-  ) {}
+  ) {
+    super(logger);
+  }
+
+  private parseDbDocument(reservation: ReservationDocument): Reservation {
+    return reservation
+      ? new Reservation({
+          ...reservation.toJSON(),
+          price: parseFloat(reservation.price.toString()),
+        })
+      : null;
+  }
 
   async create(reservation: Reservation): Promise<Reservation> {
     try {
@@ -26,11 +40,7 @@ export class ReservationDaoService implements IReservationDao {
       );
       return this.parseDbDocument(result[0]);
     } catch (error) {
-      throw new PersistenceError(
-        this.logger,
-        'Could not create reservation',
-        error,
-      );
+      this.throwError('Could not create reservation', error);
     }
   }
 
@@ -64,11 +74,7 @@ export class ReservationDaoService implements IReservationDao {
 
       return (await query).map(this.parseDbDocument);
     } catch (error) {
-      throw new PersistenceError(
-        this.logger,
-        'Could not get reservations',
-        error,
-      );
+      this.throwError('Could not get reservations', error);
     }
   }
 
@@ -77,11 +83,7 @@ export class ReservationDaoService implements IReservationDao {
       const result: ReservationDocument = await this.model.findById(id);
       return this.parseDbDocument(result);
     } catch (error) {
-      throw new PersistenceError(
-        this.logger,
-        'Could not get reservation',
-        error,
-      );
+      this.throwError('Could not get reservation', error);
     }
   }
 
@@ -105,20 +107,7 @@ export class ReservationDaoService implements IReservationDao {
 
       return this.parseDbDocument(result);
     } catch (error) {
-      throw new PersistenceError(
-        this.logger,
-        'Could not update reservations',
-        error,
-      );
+      this.throwError('Could not update reservations', error);
     }
-  }
-
-  private parseDbDocument(reservation: ReservationDocument): Reservation {
-    return reservation
-      ? new Reservation({
-          ...reservation.toJSON(),
-          price: parseFloat(reservation.price.toString()),
-        })
-      : null;
   }
 }

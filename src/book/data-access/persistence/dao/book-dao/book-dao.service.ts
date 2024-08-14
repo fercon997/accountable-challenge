@@ -1,17 +1,19 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Promise } from 'mongoose';
-import { PersistenceError } from '@shared/errors';
 import { DbPaginationOptions, DbPaginationResult } from '@shared/types';
+import { DaoService } from '@shared/dao.service';
 import { Book, BookDocument } from '../../../../common/entities';
 import { IBookDao, BookSearchFilters } from './book-dao-interface';
 
 @Injectable()
-export class BookDaoService implements IBookDao {
+export class BookDaoService extends DaoService implements IBookDao {
   constructor(
     @InjectModel(Book.name) private bookModel: Model<Book>,
-    @Inject('LoggerService') private logger: LoggerService,
-  ) {}
+    @Inject('LoggerService') logger: LoggerService,
+  ) {
+    super(logger);
+  }
 
   private parseBookDocument(book: BookDocument): Book {
     return new Book({
@@ -25,7 +27,7 @@ export class BookDaoService implements IBookDao {
       const bookDocument: BookDocument = await this.bookModel.create(book);
       return this.parseBookDocument(bookDocument);
     } catch (error) {
-      throw new PersistenceError(this.logger, 'Could not create book', error);
+      this.throwError('Could not create book', error);
     }
   }
 
@@ -34,7 +36,7 @@ export class BookDaoService implements IBookDao {
       const bookDocument: BookDocument = await this.bookModel.findById(id);
       return bookDocument ? this.parseBookDocument(bookDocument) : null;
     } catch (error) {
-      throw new PersistenceError(this.logger, 'Could not get book', error);
+      this.throwError('Could not get book', error);
     }
   }
 
@@ -43,7 +45,7 @@ export class BookDaoService implements IBookDao {
       const deleteResult = await this.bookModel.deleteOne({ _id: id });
       return deleteResult.deletedCount === 1;
     } catch (error) {
-      throw new PersistenceError(this.logger, 'Could not delete book', error);
+      this.throwError('Could not delete book', error);
     }
   }
 
@@ -56,7 +58,7 @@ export class BookDaoService implements IBookDao {
       );
       return updated ? this.parseBookDocument(updated) : null;
     } catch (error) {
-      throw new PersistenceError(this.logger, 'Could not update book', error);
+      this.throwError('Could not update book', error);
     }
   }
 
@@ -86,11 +88,7 @@ export class BookDaoService implements IBookDao {
         totalCount: await this.bookModel.find(filter).countDocuments(),
       };
     } catch (error) {
-      throw new PersistenceError(
-        this.logger,
-        'Could not search books with selected filters',
-        error,
-      );
+      this.throwError('Could not search books with selected filters', error);
     }
   }
 }

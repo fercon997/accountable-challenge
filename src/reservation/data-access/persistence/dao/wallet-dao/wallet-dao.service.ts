@@ -7,7 +7,6 @@ import {
   Types,
   UpdateQuery,
 } from 'mongoose';
-import { PersistenceError } from '@shared/errors';
 import { ITransactionService } from '@shared/services/transaction';
 import { DaoService } from '@shared/dao.service';
 import {
@@ -75,11 +74,7 @@ export class WalletDaoService extends DaoService implements IWalletDao {
       );
       return this.parseDbWallet(result);
     } catch (error) {
-      throw new PersistenceError(
-        this.logger,
-        `Could not update ${userId} wallet by ${balance}`,
-        error,
-      );
+      this.throwError(`Could not update ${userId} wallet by ${balance}`, error);
     }
   }
 
@@ -134,11 +129,7 @@ export class WalletDaoService extends DaoService implements IWalletDao {
 
       return this.parseDbWallet(result);
     } catch (error) {
-      throw new PersistenceError(
-        this.logger,
-        `Could not get wallet for user ${userId}`,
-        error,
-      );
+      this.throwError(`Could not get wallet for user ${userId}`, error);
     }
   }
 
