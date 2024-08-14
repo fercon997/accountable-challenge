@@ -1,10 +1,14 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ClientSession, FilterQuery, Model } from 'mongoose';
+import { ClientSession, FilterQuery, Model, UpdateQuery } from 'mongoose';
 import { ITransactionService } from '@shared/services/transaction';
 import { DaoService } from '@shared/dao.service';
 import { DbPaginationOptions, DbPaginationResult } from '@shared/types';
-import { Reservation, ReservationDocument } from '../../../../common/entities';
+import {
+  Reservation,
+  ReservationDocument,
+  ReservationStatus,
+} from '../../../../common/entities';
 import { IReservationDao } from './reservation-dao.interface';
 
 @Injectable()
@@ -26,6 +30,7 @@ export class ReservationDaoService
       ? new Reservation({
           ...reservation.toJSON(),
           price: parseFloat(reservation.price.toString()),
+          lateFees: parseFloat(reservation.lateFees.toString()),
         })
       : null;
   }
@@ -95,10 +100,18 @@ export class ReservationDaoService
     try {
       const query: FilterQuery<Reservation> =
         version !== undefined ? { _id: id, version } : { _id: id };
+      const updateQuery: UpdateQuery<Reservation> = {};
+      for (const key in update) {
+        if ((key as keyof Reservation) === 'lateFees') {
+          updateQuery[key] = { $inc: update[key] };
+        } else if (update[key] !== undefined) {
+          updateQuery[key] = update[key];
+        }
+      }
 
       const result: ReservationDocument = await this.model.findOneAndUpdate(
         query,
-        update,
+        updateQuery,
         {
           returnOriginal: false,
           session: this.transactionService.getCurrentTransaction(),
@@ -108,6 +121,37 @@ export class ReservationDaoService
       return this.parseDbDocument(result);
     } catch (error) {
       this.throwError('Could not update reservations', error);
+    }
+  }
+
+  async getLate(): Promise<Reservation[]> {
+    try {
+      const result: ReservationDocument[] = await this.model.find({
+        returnDate: { $exists: false },
+        expectedReturnDate: { $gte: new Date() },
+      });
+
+      return result.map(this.parseDbDocument);
+    } catch (e) {
+      this.throwError('Could not get late reservations', e);
+    }
+  }
+
+  async getByExpectedReturnDate(
+    date: Date,
+    status: ReservationStatus,
+  ): Promise<Reservation[]> {
+    try {
+      const result: ReservationDocument[] = await this.model.find({
+        status,
+        $and: [
+          { expectedReturnDate: { $gte: date } },
+          { expectedReturnDate: { $lte: date } },
+        ],
+      });
+      return result.map(this.parseDbDocument);
+    } catch (e) {
+      this.throwError('Could not get soon to be late reservations', e);
     }
   }
 }

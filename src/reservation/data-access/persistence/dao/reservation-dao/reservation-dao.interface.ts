@@ -1,5 +1,5 @@
 import { DbPaginationOptions, DbPaginationResult } from '@shared/types';
-import { Reservation } from '../../../../common/entities';
+import { Reservation, ReservationStatus } from '../../../../common/entities';
 
 export interface IReservationDao {
   create(reservation: Reservation): Promise<Reservation>;
@@ -18,6 +18,13 @@ export interface IReservationDao {
   get(input: Partial<Reservation>): Promise<Reservation[]>;
 
   getById(id: string): Promise<Reservation>;
+
+  getLate(): Promise<Reservation[]>;
+
+  getByExpectedReturnDate(
+    date: Date,
+    status: ReservationStatus,
+  ): Promise<Reservation[]>;
 }
 
 export const IReservationDao = Symbol('IReservationDao');

@@ -33,7 +33,7 @@ export class Reservation extends Entity {
   @Prop({ required: false })
   returnDate?: Date;
 
-  @Prop({ type: schema.Types.Decimal128 })
+  @Prop({ type: schema.Types.Decimal128, default: 0 })
   lateFees?: number;
 
   @Prop({

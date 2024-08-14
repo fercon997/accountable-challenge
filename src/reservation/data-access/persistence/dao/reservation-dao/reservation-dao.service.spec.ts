@@ -39,13 +39,15 @@ describe('ReservationDaoService', () => {
   const _id = new Types.ObjectId();
   const createdAt = new Date();
   const updatedAt = new Date();
+  const expectedReturnDate = new Date();
 
   const reservation: Reservation = {
     userId: userId.toString(),
     bookId: bookId.toString(),
     price: 3,
-    expectedReturnDate: new Date(),
+    expectedReturnDate,
     reservationDate: new Date(),
+    lateFees: 0,
   };
 
   const reservationRes: Reservation = {
@@ -55,6 +57,7 @@ describe('ReservationDaoService', () => {
     createdAt,
     updatedAt,
     version: 0,
+    lateFees: 0,
   };
 
   const parseDocument = (
@@ -275,10 +278,16 @@ describe('ReservationDaoService', () => {
   describe('Update reservation tests', () => {
     const updateMock = ({ _id: id, version }, update: Partial<Reservation>) => {
       if (id === _id.toString() && (!version || version === 0)) {
-        return parseDocument({ ...reservation, ...update }) as unknown as Query<
-          any,
-          any
-        >;
+        let fees = 0;
+        if (update.lateFees) {
+          fees += (update.lateFees as unknown as { $inc: number }).$inc;
+        }
+        console.info(fees);
+        return parseDocument({
+          ...reservation,
+          ...update,
+          lateFees: fees,
+        }) as unknown as Query<any, any>;
       }
     };
 
@@ -290,6 +299,23 @@ describe('ReservationDaoService', () => {
       const toUpdate: Partial<Reservation> = {
         status: ReservationStatus.reserved,
         reservationDate: new Date(),
+      };
+
+      const result = await service.update(_id.toString(), toUpdate);
+      expect(result).toEqual({ ...reservationRes, ...toUpdate });
+      expect(result).toBeInstanceOf(Reservation);
+    });
+
+    it('should return updated incrementing late fees', async () => {
+      jest
+        .spyOn(reservModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateMock);
+
+      const toUpdate: Partial<Reservation> = {
+        status: ReservationStatus.reserved,
+        reservationDate: new Date(),
+        lateFees: 2,
+        returnDate: null,
       };
 
       const result = await service.update(_id.toString(), toUpdate);
@@ -321,6 +347,82 @@ describe('ReservationDaoService', () => {
       await expect(service.update(_id.toString(), {})).rejects.toThrow(
         PersistenceError,
       );
+    });
+  });
+
+  describe('Get late tests', () => {
+    it('should return a list of late books', async () => {
+      jest
+        .spyOn(reservModel, 'find')
+        .mockResolvedValueOnce([parseDocument(reservation)]);
+
+      const result = await service.getLate();
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(reservationRes);
+      expect(result[0]).toBeInstanceOf(Reservation);
+    });
+
+    it('should return an empty array if none found', async () => {
+      jest.spyOn(reservModel, 'find').mockResolvedValueOnce([]);
+
+      expect(await service.getLate()).toHaveLength(0);
+    });
+
+    it('should throw an error if something goes wrong', async () => {
+      jest.spyOn(reservModel, 'find').mockImplementationOnce(() => {
+        throw new Error('could not find');
+      });
+
+      await expect(service.getLate()).rejects.toThrow(PersistenceError);
+    });
+  });
+
+  describe('Get by expected return date tests', () => {
+    const findMock = (filter?: FilterQuery<Reservation>) => {
+      const status = filter.status;
+      const date = filter.$and[0].expectedReturnDate.$gte;
+
+      if (reservationRes.status === status && expectedReturnDate === date) {
+        return [parseDocument(reservationRes)] as unknown as Query<any, any>;
+      }
+
+      return [] as unknown as Query<any, any>;
+    };
+
+    it('should return a list of books that equal status and date', async () => {
+      jest.spyOn(reservModel, 'find').mockImplementationOnce(findMock);
+
+      const result = await service.getByExpectedReturnDate(
+        expectedReturnDate,
+        ReservationStatus.pending,
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(reservationRes);
+      expect(result[0]).toBeInstanceOf(Reservation);
+    });
+
+    it('should return an empty array if none found', async () => {
+      jest.spyOn(reservModel, 'find').mockImplementationOnce(findMock);
+
+      const result = await service.getByExpectedReturnDate(
+        new Date(),
+        ReservationStatus.pending,
+      );
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should throw an error if something goes wrong', async () => {
+      jest.spyOn(reservModel, 'find').mockImplementationOnce(() => {
+        throw new Error('could not find');
+      });
+
+      await expect(
+        service.getByExpectedReturnDate(
+          expectedReturnDate,
+          ReservationStatus.pending,
+        ),
+      ).rejects.toThrow(PersistenceError);
     });
   });
 });
