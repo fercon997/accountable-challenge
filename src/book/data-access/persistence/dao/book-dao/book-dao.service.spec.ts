@@ -328,4 +328,44 @@ describe('BookDaoService', () => {
       ).rejects.toThrow(PersistenceError);
     });
   });
+
+  describe('get by ids tests', () => {
+    const findMock = (filter?: FilterQuery<Book>) => {
+      const $in = filter._id.$in;
+      if ($in[0] === book._id) {
+        return [
+          {
+            ...parseDbBook(bookResult),
+            toJSON: () => parseDbBook(bookResult),
+          },
+        ] as unknown as Query<any, any>;
+      }
+      return [] as unknown as Query<any, any>;
+    };
+
+    it('should return books by ids', async () => {
+      jest.spyOn(bookModel, 'find').mockImplementationOnce(findMock);
+
+      const result = await service.getByIds([book._id]);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(bookResult);
+      expect(result[0]).toBeInstanceOf(Book);
+    });
+
+    it('should return empty array if not found', async () => {
+      jest.spyOn(bookModel, 'find').mockImplementationOnce(findMock);
+
+      expect(await service.getByIds(['1asdas'])).toHaveLength(0);
+    });
+
+    it('should throw an error if something goes wrong', async () => {
+      jest.spyOn(bookModel, 'find').mockImplementationOnce(() => {
+        throw new Error('cannot get');
+      });
+
+      await expect(service.getByIds(['1asdas'])).rejects.toThrow(
+        PersistenceError,
+      );
+    });
+  });
 });

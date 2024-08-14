@@ -20,6 +20,8 @@ export interface IBookDao {
     filters: BookSearchFilters,
     paginationOptions: DbPaginationOptions,
   ): Promise<DbPaginationResult<Book>>;
+
+  getByIds(ids: string[]): Promise<Book[]>;
 }
 
 export const IBookDao = Symbol('IBookDao');

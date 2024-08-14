@@ -8,6 +8,7 @@ import { compareSync } from 'bcrypt';
 import { sign, verify } from 'jsonwebtoken';
 import { TokenUser } from '@shared/types';
 import { IUserDao } from '../../../data-access/persistence/dao/user-dao';
+import { Role, User } from '../../../common/entities';
 import { IUserService } from './user-service.interface';
 
 @Injectable()
@@ -26,12 +27,14 @@ export class UserService implements IUserService {
       throw new UnauthorizedException();
     }
 
+    const role = user.role as Role;
+
     const result: TokenUser = {
       id: user._id,
       email: user.email,
       role: {
-        name: user.role.name,
-        permissions: user.role.permissions.map((permission) => permission.name),
+        name: role.name,
+        permissions: role.permissions.map((permission) => permission.name),
       },
     };
 
@@ -44,5 +47,11 @@ export class UserService implements IUserService {
     } catch (e) {
       throw new UnauthorizedException();
     }
+  }
+
+  async getByIds(userIds: string[]): Promise<User[]> {
+    const users = await this.dao.getByIds(userIds);
+
+    return users;
   }
 }

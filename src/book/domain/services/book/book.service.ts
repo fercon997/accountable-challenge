@@ -99,4 +99,8 @@ export class BookService implements IBookService {
 
     return { ...result, page, pageSize };
   }
+
+  async getByIds(ids: string[]): Promise<Book[]> {
+    return await this.bookDao.getByIds(ids);
+  }
 }

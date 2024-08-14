@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { DaoService } from '@shared/dao.service';
-import { Model, Promise } from 'mongoose';
+import { Model, Promise, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   Permission,
@@ -24,12 +24,17 @@ export class UserDaoService extends DaoService implements IUserDao {
     if (document) {
       const doc = document.toJSON();
       const { role } = doc;
-      const { permissions } = role;
+      if (role instanceof Types.ObjectId) {
+        return new User({ ...doc, role: { _id: role.toString() } });
+      }
+
       return new User({
         ...doc,
         role: new Role({
-          ...role,
-          permissions: permissions.map((perm) => new Permission(perm)),
+          ...(role as Role),
+          permissions: (role as Role).permissions.map(
+            (perm) => new Permission(perm),
+          ),
         }),
       });
     }
@@ -46,6 +51,15 @@ export class UserDaoService extends DaoService implements IUserDao {
       return this.parseDbResult(result);
     } catch (e) {
       this.throwError('Cannot find user', e);
+    }
+  }
+
+  async getByIds(ids: string[]): Promise<User[]> {
+    try {
+      const result = await this.userModel.find({ _id: { $in: ids } });
+      return result.map(this.parseDbResult);
+    } catch (e) {
+      this.throwError(`Cannot find users ${ids}`, e);
     }
   }
 }

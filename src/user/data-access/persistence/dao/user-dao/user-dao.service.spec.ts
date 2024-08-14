@@ -3,7 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { createMock } from '@golevelup/ts-jest';
 import { FilterQuery, Model, Query, Types } from 'mongoose';
 import { PersistenceError } from '@shared/errors';
-import { User } from '../../../../common/entities';
+import { Role, User } from '../../../../common/entities';
 import { IUserDao } from './user-dao.interface';
 import { UserDaoService } from './user-dao.service';
 
@@ -17,13 +17,18 @@ describe('UserDaoService', () => {
   const createdAt = new Date();
   const updatedAt = new Date();
 
-  const user: User = {
+  const userPlain: User = {
     _id: _id.toString(),
     name: 'test user',
     email,
     password,
     createdAt,
     updatedAt,
+    role: { _id: _id.toString() },
+  };
+
+  const user: User = {
+    ...userPlain,
     role: {
       _id: _id.toString(),
       name: 'role',
@@ -43,7 +48,7 @@ describe('UserDaoService', () => {
     role: {
       ...user.role,
       _id,
-      permissions: [{ ...user.role.permissions[0], _id }],
+      permissions: [{ ...(user.role as Role).permissions[0], _id }],
     },
   };
 
@@ -97,6 +102,51 @@ describe('UserDaoService', () => {
       });
 
       await expect(service.get(email)).rejects.toBeInstanceOf(PersistenceError);
+    });
+  });
+
+  describe('Get by Ids tests', () => {
+    const plainDoc = {
+      ...userDocument,
+      ...userPlain,
+      role: _id,
+    };
+    const findMock = (filter?: FilterQuery<User>) => {
+      const $in = filter._id.$in;
+      if ($in[0] === _id.toString()) {
+        return [
+          {
+            toJSON: () => plainDoc,
+          },
+        ] as unknown as Query<any, any>;
+      }
+
+      return [] as unknown as Query<any, any>;
+    };
+
+    it('should return users by ids', async () => {
+      jest.spyOn(model, 'find').mockImplementationOnce(findMock);
+
+      const result = await service.getByIds([_id.toString()]);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(userPlain);
+      expect(result[0]).toBeInstanceOf(User);
+    });
+
+    it('should return empty array if not found', async () => {
+      jest.spyOn(model, 'find').mockImplementationOnce(findMock);
+
+      expect(await service.getByIds(['1asdas'])).toHaveLength(0);
+    });
+
+    it('should throw an error if something goes wrong', async () => {
+      jest.spyOn(model, 'find').mockImplementationOnce(() => {
+        throw new Error('cannot get');
+      });
+
+      await expect(service.getByIds(['1asdas'])).rejects.toThrow(
+        PersistenceError,
+      );
     });
   });
 });

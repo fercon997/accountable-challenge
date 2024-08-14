@@ -91,4 +91,13 @@ export class BookDaoService extends DaoService implements IBookDao {
       this.throwError('Could not search books with selected filters', error);
     }
   }
+
+  async getByIds(ids: string[]): Promise<Book[]> {
+    try {
+      const result = await this.bookModel.find({ _id: { $in: ids } });
+      return result.map(this.parseBookDocument);
+    } catch (e) {
+      this.throwError('Could not get books', e);
+    }
+  }
 }

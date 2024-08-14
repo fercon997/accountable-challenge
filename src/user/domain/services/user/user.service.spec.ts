@@ -13,7 +13,7 @@ import { genSaltSync, hashSync } from 'bcrypt';
 import { TokenUser } from '@shared/types';
 import { UnauthorizedException } from '@nestjs/common';
 import { IUserDao } from '../../../data-access/persistence/dao/user-dao';
-import { User } from '../../../common/entities';
+import { Role, User } from '../../../common/entities';
 import { UserService } from './user.service';
 import { IUserService } from './user-service.interface';
 
@@ -48,8 +48,10 @@ describe('UserService', () => {
     email: user.email,
     iat: 12234984239,
     role: {
-      name: user.role.name,
-      permissions: user.role.permissions.map((permissions) => permissions.name),
+      name: (user.role as Role).name,
+      permissions: (user.role as Role).permissions.map(
+        (permissions) => permissions.name,
+      ),
     },
   };
 
@@ -109,6 +111,28 @@ describe('UserService', () => {
       expect(() => service.verifyToken('asdia7y12')).toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  describe('get by ids tests', () => {
+    beforeEach(() => {
+      jest.spyOn(dao, 'getByIds').mockImplementationOnce(async (ids) => {
+        if (ids[0] === _id) {
+          return [user];
+        }
+        return [];
+      });
+    });
+
+    it('should get user', async () => {
+      const result = await service.getByIds([_id]);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(user);
+    });
+
+    it('should return empty array', async () => {
+      const result = await service.getByIds(['adsadasq221321']);
+      expect(result).toHaveLength(0);
     });
   });
 });

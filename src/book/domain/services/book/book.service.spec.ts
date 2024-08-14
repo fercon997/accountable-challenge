@@ -233,4 +233,28 @@ describe('BookService', () => {
       );
     });
   });
+
+  describe('Get by ids tests', () => {
+    beforeEach(() => {
+      jest
+        .spyOn(bookDao, 'getByIds')
+        .mockImplementationOnce(async (ids: string[]) => {
+          if (ids[0] === book._id) {
+            return [bookResult];
+          }
+          return [];
+        });
+    });
+
+    it('should return books array', async () => {
+      const result = await service.getByIds([book._id]);
+
+      expect(result).toHaveLength(1);
+      expect(result).toEqual([bookResult]);
+    });
+
+    it('should return empty array if not found', async () => {
+      expect(await service.getByIds(['1312asdda'])).toHaveLength(0);
+    });
+  });
 });

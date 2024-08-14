@@ -17,7 +17,7 @@ export class User extends Entity {
   password: string;
 
   @Prop({ type: schema.Types.ObjectId, ref: 'Role', index: true })
-  role?: Role;
+  role?: Role | Pick<Role, '_id'>;
 
   constructor(user: User) {
     super(user);

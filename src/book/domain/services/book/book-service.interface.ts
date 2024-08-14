@@ -15,6 +15,8 @@ export interface IBookService {
     filters: BookSearchFilters,
     options: PaginationOptions,
   ): Promise<PaginationResult<Book>>;
+
+  getByIds(ids: string[]): Promise<Book[]>;
 }
 
 export const IBookService = Symbol('IBookService');
