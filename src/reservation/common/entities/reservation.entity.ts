@@ -13,15 +13,15 @@ export enum ReservationStatus {
   canceled = 'canceled',
 }
 
-@Schema({ autoIndex: true, versionKey: 'version' })
+@Schema({ versionKey: 'version' })
 export class Reservation extends Entity {
   @Prop({ required: true })
   bookId: string;
 
-  @Prop({ type: schema.Types.ObjectId, required: true })
+  @Prop({ type: schema.Types.ObjectId, required: true, index: true })
   userId: string;
 
-  @Prop({ type: schema.Types.Decimal128, required: true })
+  @Prop({ type: schema.Types.Decimal128, required: true, index: true })
   price: number;
 
   @Prop({ required: true })
@@ -60,7 +60,6 @@ export class Reservation extends Entity {
 }
 
 export const ReservationSchema = SchemaFactory.createForClass(Reservation);
-ReservationSchema.index({ bookId: 1, userId: 1 }, { unique: true });
 /* istanbul ignore next */
 ReservationSchema.pre('findOneAndUpdate', function (next) {
   this.findOneAndUpdate({}, { $inc: { version: 1 } });

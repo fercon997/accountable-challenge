@@ -20,6 +20,7 @@ export interface IWalletDao {
   removeReservation(
     userId: string,
     reservationId: string,
+    fees: number,
     version?: number,
   ): Promise<boolean>;
 }

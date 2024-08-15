@@ -5,5 +5,6 @@ import { EmailService, IEmailService } from './domain/services/email';
 @Module({
   imports: [SharedModule],
   providers: [{ provide: IEmailService, useClass: EmailService }],
+  exports: [IEmailService],
 })
 export class NotificationsModule {}

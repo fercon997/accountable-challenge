@@ -135,15 +135,13 @@ describe('WalletService', () => {
     });
   });
 
-  const reservMock = async (id: string) => {
-    return id === userId;
-  };
-
   describe('Add reservation tests', () => {
     beforeEach(() => {
       jest
         .spyOn(walletDao, 'addReservation')
-        .mockImplementationOnce(reservMock);
+        .mockImplementationOnce(async (id: string, resId, version?: number) => {
+          return id === userId && version === 0;
+        });
     });
 
     it('should return true', async () => {
@@ -160,6 +158,17 @@ describe('WalletService', () => {
       await expect(service.addReservation(userId, '12345')).rejects.toThrow(
         MaxAmountOfReservationsError,
       );
+
+      wallet.reservations = [];
+    });
+
+    it('should throw an error if version has changed', async () => {
+      wallet.version = 3;
+      await expect(service.addReservation(userId, '123324')).rejects.toThrow(
+        VersionChangedError,
+      );
+
+      wallet.version = 0;
     });
   });
 
@@ -167,20 +176,36 @@ describe('WalletService', () => {
     beforeEach(() => {
       jest
         .spyOn(walletDao, 'removeReservation')
-        .mockImplementationOnce(reservMock);
+        .mockImplementationOnce(
+          async (id: string, resId, fees: number, version: number) => {
+            return id === userId && version === 0;
+          },
+        );
     });
 
     it('should return true', async () => {
       const resId = new Types.ObjectId().toString();
       wallet.reservations = [{ _id: resId }];
 
-      expect(await service.removeReservation(userId, resId)).toBe(true);
+      expect(await service.removeReservation(userId, resId, 3)).toBe(true);
     });
 
     it('should throw an error if the user doesnt have the reservation', async () => {
       await expect(service.removeReservation(userId, '12345')).rejects.toThrow(
         ReservationNotFoundError,
       );
+    });
+
+    it('should throw an error if version has changed', async () => {
+      const resId = new Types.ObjectId().toString();
+      wallet.reservations = [{ _id: resId }];
+      wallet.version = 3;
+
+      await expect(service.removeReservation(userId, resId)).rejects.toThrow(
+        VersionChangedError,
+      );
+
+      wallet.version = 0;
     });
   });
 });

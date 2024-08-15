@@ -103,7 +103,7 @@ export class ReservationDaoService
       const updateQuery: UpdateQuery<Reservation> = {};
       for (const key in update) {
         if ((key as keyof Reservation) === 'lateFees') {
-          updateQuery[key] = { $inc: update[key] };
+          updateQuery.$inc = { [key]: update[key] };
         } else if (update[key] !== undefined) {
           updateQuery[key] = update[key];
         }
@@ -128,7 +128,7 @@ export class ReservationDaoService
     try {
       const result: ReservationDocument[] = await this.model.find({
         returnDate: { $exists: false },
-        expectedReturnDate: { $gte: new Date() },
+        expectedReturnDate: { $lte: new Date() },
       });
 
       return result.map(this.parseDbDocument);

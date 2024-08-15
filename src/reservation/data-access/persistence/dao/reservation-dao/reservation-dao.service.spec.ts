@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FilterQuery, Model, Query, Types } from 'mongoose';
+import { FilterQuery, Model, Query, Types, UpdateQuery } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 import { createMock } from '@golevelup/ts-jest';
 import { PersistenceError } from '@shared/errors';
@@ -276,13 +276,15 @@ describe('ReservationDaoService', () => {
   });
 
   describe('Update reservation tests', () => {
-    const updateMock = ({ _id: id, version }, update: Partial<Reservation>) => {
+    const updateMock = (
+      { _id: id, version },
+      update: UpdateQuery<Reservation>,
+    ) => {
       if (id === _id.toString() && (!version || version === 0)) {
         let fees = 0;
-        if (update.lateFees) {
-          fees += (update.lateFees as unknown as { $inc: number }).$inc;
+        if (update.$inc) {
+          fees += update.$inc.lateFees;
         }
-        console.info(fees);
         return parseDocument({
           ...reservation,
           ...update,

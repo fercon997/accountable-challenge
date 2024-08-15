@@ -78,12 +78,19 @@ export class WalletDaoService extends DaoService implements IWalletDao {
     }
   }
 
-  private async updateReservations(
-    userId: string,
-    reservationId: string,
-    operation: 'push' | 'pull',
-    version?: number,
-  ): Promise<boolean> {
+  private async updateReservations({
+    userId,
+    reservationId,
+    operation,
+    fees,
+    version,
+  }: {
+    userId: string;
+    reservationId: string;
+    operation: 'push' | 'pull';
+    fees?: number;
+    version?: number;
+  }): Promise<boolean> {
     try {
       const query: FilterQuery<Wallet> = version
         ? { userId, version }
@@ -95,6 +102,10 @@ export class WalletDaoService extends DaoService implements IWalletDao {
 
       if (operation === 'pull') {
         update.$pull = { reservations: reservationId };
+      }
+
+      if (fees) {
+        update.$inc = { balance: fees };
       }
 
       const result = await this.walletModel.findOneAndUpdate(query, update, {
@@ -138,14 +149,26 @@ export class WalletDaoService extends DaoService implements IWalletDao {
     reservationId: string,
     version?: number,
   ): Promise<boolean> {
-    return this.updateReservations(userId, reservationId, 'push', version);
+    return this.updateReservations({
+      userId,
+      reservationId,
+      operation: 'push',
+      version,
+    });
   }
 
   async removeReservation(
     userId: string,
     reservationId: string,
+    fees?: number,
     version?: number,
   ): Promise<boolean> {
-    return this.updateReservations(userId, reservationId, 'pull', version);
+    return this.updateReservations({
+      userId,
+      reservationId,
+      operation: 'pull',
+      fees,
+      version,
+    });
   }
 }

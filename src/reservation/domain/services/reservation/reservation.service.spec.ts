@@ -227,10 +227,10 @@ describe('ReservationService', () => {
     });
 
     it('should cancel reservation', async () => {
-      expect(await service.cancelReservation(_id, userId)).toEqual({
-        ...reservationResult,
-        status: ReservationStatus.canceled,
-      });
+      const result = await service.cancelReservation(_id, userId);
+
+      expect(result.status).toBe(ReservationStatus.canceled);
+      expect(result.returnDate).toBeTruthy();
     });
 
     it('should throw an error if reservation does not belong to user', async () => {
@@ -276,7 +276,6 @@ describe('ReservationService', () => {
       const result = await service.endReservation(_id, userId);
       expect(result.status).toBe(ReservationStatus.returned);
       expect(result.returnDate).toBeTruthy();
-      expect(walletService.decrementBalance).toHaveBeenCalled();
     });
 
     it('should not change status if it is already bought', async () => {

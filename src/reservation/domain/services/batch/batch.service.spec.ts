@@ -196,7 +196,6 @@ describe('BatchService', () => {
     });
 
     it('should not update because of version error', async () => {
-      console.info(reservation);
       reservation.status = ReservationStatus.reserved;
       reservation.returnDate = null;
       reservation.version = 3;

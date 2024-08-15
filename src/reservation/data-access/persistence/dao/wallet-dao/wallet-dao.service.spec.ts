@@ -324,7 +324,25 @@ describe('WalletDaoService', () => {
         .mockImplementationOnce(updateResMock);
 
       expect(
-        await service.removeReservation(userId.toString(), reservationRes._id),
+        await service.removeReservation(
+          userId.toString(),
+          reservationRes._id,
+          0,
+        ),
+      ).toBe(true);
+    });
+
+    it('should remove reservation and charge late fees', async () => {
+      jest
+        .spyOn(walletModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateResMock);
+
+      expect(
+        await service.removeReservation(
+          userId.toString(),
+          reservationRes._id,
+          2,
+        ),
       ).toBe(true);
     });
 
@@ -333,7 +351,7 @@ describe('WalletDaoService', () => {
         .spyOn(walletModel, 'findOneAndUpdate')
         .mockImplementationOnce(updateResMock);
       expect(
-        await service.removeReservation('1232143', reservationRes._id),
+        await service.removeReservation('1232143', reservationRes._id, 0),
       ).toBe(false);
     });
 
@@ -345,6 +363,7 @@ describe('WalletDaoService', () => {
         await service.removeReservation(
           userId.toString(),
           reservationRes._id,
+          0,
           1,
         ),
       ).toBe(false);
@@ -355,9 +374,9 @@ describe('WalletDaoService', () => {
         throw new Error('could not update');
       });
 
-      await expect(service.removeReservation('13213', '12134')).rejects.toThrow(
-        PersistenceError,
-      );
+      await expect(
+        service.removeReservation('13213', '12134', 0),
+      ).rejects.toThrow(PersistenceError);
     });
   });
 });

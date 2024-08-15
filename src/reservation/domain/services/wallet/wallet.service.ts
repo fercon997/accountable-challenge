@@ -23,6 +23,12 @@ export class WalletService implements IWalletService {
     }
   }
 
+  private manageVersionChanged(wallet: Wallet | boolean) {
+    if (!wallet) {
+      throw new VersionChangedError(this.logger, Wallet.name);
+    }
+  }
+
   async incrementBalance(userId: string, amount: number): Promise<Wallet> {
     this.logger.log(`Incrementing user ${userId} balance by ${amount}`);
     const result = await this.walletDao.incrementBalance(userId, amount);
@@ -58,9 +64,7 @@ export class WalletService implements IWalletService {
       wallet.version,
     );
 
-    if (!result) {
-      throw new VersionChangedError(this.logger, Wallet.name);
-    }
+    this.manageVersionChanged(result);
 
     this.logger.log(`Deducted amount from ${userId} balance`);
     return result;
@@ -76,27 +80,44 @@ export class WalletService implements IWalletService {
       throw new MaxAmountOfReservationsError(this.logger, userId);
     }
 
-    return await this.walletDao.addReservation(
+    const result = await this.walletDao.addReservation(
       userId,
       reservationId,
       wallet.version,
     );
+
+    this.manageVersionChanged(result);
+
+    return result;
   }
 
   async removeReservation(
     userId: string,
     reservationId: string,
+    fees?: number,
   ): Promise<boolean> {
+    this.logger.log(
+      `Removing reservation ${reservationId} from user ${userId} wallet and charging ${fees} in late fees`,
+    );
     const wallet = await this.get(userId);
 
     if (!wallet.reservations.find(({ _id }) => _id === reservationId)) {
       throw new ReservationNotFoundError(this.logger, reservationId);
     }
 
-    return await this.walletDao.removeReservation(
+    const result = await this.walletDao.removeReservation(
       userId,
       reservationId,
+      fees ? -fees : 0,
       wallet.version,
     );
+
+    this.manageVersionChanged(result);
+
+    this.logger.log(
+      `Removed reservation ${reservationId} from user ${userId} wallet`,
+    );
+
+    return result;
   }
 }

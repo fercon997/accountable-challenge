@@ -101,15 +101,6 @@ export class ReservationService implements IReservationService {
     return reservation;
   }
 
-  private async manageLateFees(reservation: Reservation): Promise<void> {
-    if (reservation.lateFees) {
-      await this.walletService.decrementBalance(
-        reservation.userId,
-        reservation.lateFees,
-      );
-    }
-  }
-
   async get(filters: Partial<Reservation>): Promise<Reservation[]> {
     this.logger.log(
       `Getting reservations by filters ${JSON.stringify(filters)}`,
@@ -219,7 +210,7 @@ export class ReservationService implements IReservationService {
     return await this.transactionService.startTransaction(async () => {
       const result = await this.updateReservation(
         reservationId,
-        { status: ReservationStatus.canceled },
+        { status: ReservationStatus.canceled, returnDate: new Date() },
         reservation.version,
       );
 
@@ -265,13 +256,15 @@ export class ReservationService implements IReservationService {
         reservation.version,
       );
 
-      await this.manageLateFees(reservation);
-
-      if (reservation.status !== ReservationStatus.returned) {
+      if (reservation.status !== ReservationStatus.bought) {
         await this.bookInvService.releaseReservation(reservation.bookId);
       }
 
-      await this.walletService.removeReservation(userId, reservationId);
+      await this.walletService.removeReservation(
+        userId,
+        reservationId,
+        reservation.lateFees,
+      );
 
       return result;
     });

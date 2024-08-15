@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SharedModule } from '@shared/shared.module';
 import { BooksModule } from '@book/books.module';
 import { UsersModule } from '@user/users.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationsModule } from '../notification/notifications.module';
 import {
   BookInventory,
@@ -32,6 +33,7 @@ import { ReservationService } from './domain/services/reservation/reservation.se
 import { ReservationController } from './controllers/reservation/reservation.controller';
 import { IReservationService } from './domain/services/reservation/reservation-service.interface';
 import { BatchService, IBatchService } from './domain/services/batch';
+import { ScheduleService } from './schedules/schedule/schedule.service';
 
 @Module({
   imports: [
@@ -44,6 +46,7 @@ import { BatchService, IBatchService } from './domain/services/batch';
     forwardRef(() => BooksModule),
     UsersModule,
     NotificationsModule,
+    ScheduleModule.forRoot(),
   ],
   providers: [
     { provide: IBookInventoryDao, useClass: BookInventoryDaoService },
@@ -53,6 +56,7 @@ import { BatchService, IBatchService } from './domain/services/batch';
     { provide: IReservationDao, useClass: ReservationDaoService },
     { provide: IReservationService, useClass: ReservationService },
     { provide: IBatchService, useClass: BatchService },
+    ScheduleService,
   ],
   exports: [IBookInventoryService],
   controllers: [WalletController, ReservationController],
