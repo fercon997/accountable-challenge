@@ -1,5 +1,7 @@
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('dotenv').config();
+import * as process from 'node:process';
 import mongoose from 'mongoose';
-
 import { Book, BookSchema } from '@book/common/entities';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import converter = require('csvtojson');
@@ -129,8 +131,8 @@ async function seedUsers() {
 }
 
 async function seed() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/accountable', {
-    connectTimeoutMS: 1000,
+  await mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 100,
   });
 
   await mongoose.connection.db.dropDatabase();

@@ -1,6 +1,22 @@
 services:
+  node-app:
+    container_name: node-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo-init
+    volumes:
+      - .:/app
+
+      - /app/node_modules
+
+    command: npm run start:dev
+
   mongo:
-    container_name: mongo_db
+    container_name: mongo
     image: mongo:latest
     command: --replSet rs0
     ports:
@@ -27,9 +43,7 @@ services:
       rs.initiate( {
          _id : "rs0",
          members: [
-            { _id: 0, host: "localhost:27017" }
+            { _id: 1, host: "mongo:27017" },
          ]
       })
       '
-
-

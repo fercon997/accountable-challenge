@@ -1,6 +1,7 @@
+import * as process from 'node:process';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -8,6 +9,9 @@ async function bootstrap() {
     logger: ['warn', 'error', 'log'],
   });
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
+  const port = process.env.PORT || 3000;
+  const logger = new Logger('NestApplication');
 
   const config = new DocumentBuilder()
     .setTitle('Accountable library challenge')
@@ -17,7 +21,8 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-  await app.listen(3000);
+  await app.listen(port);
+  logger.log(`Server running on port ${port}`);
 }
 
 bootstrap();
