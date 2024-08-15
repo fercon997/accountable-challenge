@@ -4,6 +4,7 @@ import { UsersModule } from '@user/users.module';
 import { BooksModule } from '@book/books.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RouterModule } from '@nestjs/core';
+import { NotificationsModule } from './notification/notifications.module';
 
 @Module({
   imports: [
@@ -21,6 +22,8 @@ import { RouterModule } from '@nestjs/core';
     ReservationModule,
     UsersModule,
     BooksModule,
+    NotificationsModule,
   ],
+  providers: [],
 })
 export class AppModule {}
