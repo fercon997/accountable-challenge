@@ -1,3 +1,5 @@
+# Accountable library challenge
+
 ## Running the app
 
 Create your `.env` file, you can copy `.env.example` and the application will run.
