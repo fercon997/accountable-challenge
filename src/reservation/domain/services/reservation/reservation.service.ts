@@ -267,7 +267,9 @@ export class ReservationService implements IReservationService {
 
       await this.manageLateFees(reservation);
 
-      await this.bookInvService.releaseReservation(reservation.bookId);
+      if (reservation.status !== ReservationStatus.returned) {
+        await this.bookInvService.releaseReservation(reservation.bookId);
+      }
 
       await this.walletService.removeReservation(userId, reservationId);
 

@@ -281,4 +281,68 @@ describe('BookInventoryDaoService', () => {
       ).rejects.toThrow(PersistenceError);
     });
   });
+
+  describe('Update inventory tests', () => {
+    const updateMock = (
+      { bookId: id, version },
+      { $inc: { totalInventory, totalReserved } },
+    ) => {
+      if (id === bookId && (!version || version === bookInvDoc.version)) {
+        return {
+          ...bookInvDoc,
+          totalInventory: bookInvDoc.totalInventory + totalInventory,
+          totalReserved: bookInv.totalReserved + totalReserved,
+        } as unknown as Query<any, any>;
+      }
+    };
+
+    it('should return updated inventory', async () => {
+      jest
+        .spyOn(bookInvModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateMock);
+
+      const quantity = -1;
+
+      const result = await service.updateInventory(
+        bookId,
+        quantity,
+        bookInv.version,
+      );
+
+      expect(result).toEqual({
+        ...bookInv,
+        totalInventory: bookInv.totalInventory + quantity,
+        totalReserved: bookInv.totalReserved + quantity,
+      });
+      expect(result).toBeInstanceOf(BookInventory);
+    });
+
+    it('should return null when not found', async () => {
+      jest
+        .spyOn(bookInvModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateMock);
+
+      expect(await service.updateInventory('123', 1)).toBeNull();
+    });
+
+    it('should return null when version mismatch', async () => {
+      jest
+        .spyOn(bookInvModel, 'findOneAndUpdate')
+        .mockImplementationOnce(updateMock);
+
+      expect(await service.updateInventory(bookId, 1, 3)).toBeNull();
+    });
+
+    it('should throw an error if something goes wrong', async () => {
+      jest
+        .spyOn(bookInvModel, 'findOneAndUpdate')
+        .mockImplementationOnce(() => {
+          throw new Error('could not update');
+        });
+
+      await expect(
+        service.updateInventory(bookId, 1, bookInv.version),
+      ).rejects.toThrow(PersistenceError);
+    });
+  });
 });

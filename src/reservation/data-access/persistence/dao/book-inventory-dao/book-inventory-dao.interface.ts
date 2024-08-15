@@ -14,6 +14,12 @@ export interface IBookInventoryDao {
     quantity: number,
     version?: number,
   ): Promise<BookInventory>;
+
+  updateInventory(
+    bookId: string,
+    quantity: number,
+    version?: number,
+  ): Promise<BookInventory>;
 }
 
 export const IBookInventoryDao = Symbol('IBookInventoryDao');

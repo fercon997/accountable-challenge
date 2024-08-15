@@ -245,4 +245,58 @@ describe('BookInventoryService', () => {
       );
     });
   });
+
+  describe('Decrement inventory tests', () => {
+    const updateInvMock =
+      (v: number, inv?: BookInventory) => async (id, quantity, version) => {
+        const bokInv = inv || bookInv;
+        if (id === bokInv.bookId && (!version || version === v)) {
+          return {
+            ...bokInv,
+            totalInventory: bokInv.totalInventory + quantity,
+            totalReserved: bokInv.totalReserved + quantity,
+          };
+        }
+        return null;
+      };
+    it('should return updated bookInventory', async () => {
+      const expected = { ...bookInv, totalInventory: 4, totalReserved: 3 };
+      jest.spyOn(bookInvDao, 'get').mockImplementationOnce(getMock(expected));
+      jest
+        .spyOn(bookInvDao, 'updateInventory')
+        .mockImplementationOnce(updateInvMock(0, expected));
+
+      expect(await service.decrementInventory(bookId)).toEqual({
+        ...expected,
+        totalInventory: expected.totalInventory - 1,
+        totalReserved: expected.totalReserved - 1,
+      });
+    });
+
+    it('should fail if cannot update', async () => {
+      jest
+        .spyOn(bookInvDao, 'get')
+        .mockImplementationOnce(
+          getMock({ ...bookInv, totalInventory: 0, totalReserved: 0 }),
+        );
+      await expect(service.decrementInventory(bookId)).rejects.toThrow(
+        InvalidQuantityError,
+      );
+    });
+
+    it('should fail if version mismatch', async () => {
+      jest
+        .spyOn(bookInvDao, 'get')
+        .mockImplementationOnce(
+          getMock({ ...bookInv, totalInventory: 2, version: 1 }),
+        );
+      jest
+        .spyOn(bookInvDao, 'updateInventory')
+        .mockImplementationOnce(updateInvMock(2));
+
+      await expect(service.decrementInventory(bookId)).rejects.toThrow(
+        VersionChangedError,
+      );
+    });
+  });
 });

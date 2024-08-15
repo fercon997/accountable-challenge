@@ -112,6 +112,27 @@ export class BookInventoryService implements IBookInventoryService {
     return result;
   }
 
+  async decrementInventory(bookId: string): Promise<BookInventory> {
+    this.logger.log(`Removing inventory from book ${bookId} count`);
+    const amount = -1;
+    const bookInv = await this.get(bookId);
+
+    if (bookInv.totalInventory === 0) {
+      throw new InvalidQuantityError(this.logger, bookId, amount);
+    }
+
+    const result = await this.bookInvDao.updateInventory(
+      bookId,
+      amount,
+      bookInv.version,
+    );
+
+    this.handleVersionChanged(result);
+
+    this.logger.log('Inventory successfully removed from count');
+    return result;
+  }
+
   private handleVersionChanged(result: BookInventory) {
     if (!result) {
       throw new VersionChangedError(this.logger, BookInventory.name);

@@ -105,4 +105,30 @@ export class BookInventoryDaoService
       this.throwError(`Could not update book inventory ${bookId}`, error);
     }
   }
+
+  async updateInventory(
+    bookId: string,
+    quantity: number,
+    version?: number,
+  ): Promise<BookInventory> {
+    try {
+      const query: FilterQuery<BookInventory> = version
+        ? { bookId, version }
+        : { bookId };
+
+      const result = await this.bookInventoryModel.findOneAndUpdate(
+        query,
+        {
+          $inc: { totalInventory: quantity, totalReserved: quantity },
+        },
+        {
+          returnOriginal: false,
+          session: this.transactionService.getCurrentTransaction(),
+        },
+      );
+      return result ? new BookInventory(result) : null;
+    } catch (error) {
+      this.throwError(`Could not update book inventory ${bookId}`, error);
+    }
+  }
 }

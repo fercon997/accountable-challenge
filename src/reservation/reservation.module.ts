@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SharedModule } from '@shared/shared.module';
 import { BooksModule } from '@book/books.module';
 import { UsersModule } from '@user/users.module';
+import { NotificationsModule } from '../notification/notifications.module';
 import {
   BookInventory,
   BookInventorySchema,
@@ -30,6 +31,7 @@ import { IReservationDao } from './data-access/persistence/dao/reservation-dao/r
 import { ReservationService } from './domain/services/reservation/reservation.service';
 import { ReservationController } from './controllers/reservation/reservation.controller';
 import { IReservationService } from './domain/services/reservation/reservation-service.interface';
+import { BatchService, IBatchService } from './domain/services/batch';
 
 @Module({
   imports: [
@@ -41,6 +43,7 @@ import { IReservationService } from './domain/services/reservation/reservation-s
     SharedModule,
     forwardRef(() => BooksModule),
     UsersModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: IBookInventoryDao, useClass: BookInventoryDaoService },
@@ -49,6 +52,7 @@ import { IReservationService } from './domain/services/reservation/reservation-s
     { provide: IWalletService, useClass: WalletService },
     { provide: IReservationDao, useClass: ReservationDaoService },
     { provide: IReservationService, useClass: ReservationService },
+    { provide: IBatchService, useClass: BatchService },
   ],
   exports: [IBookInventoryService],
   controllers: [WalletController, ReservationController],

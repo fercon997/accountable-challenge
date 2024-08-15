@@ -12,6 +12,8 @@ export interface IBookInventoryService {
   releaseReservation(bookId: string): Promise<BookInventory>;
 
   delete(bookId: string): Promise<boolean>;
+
+  decrementInventory(bookId: string): Promise<BookInventory>;
 }
 
 export const IBookInventoryService = Symbol('IBookInventoryService');
